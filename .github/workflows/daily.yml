@@ -13,6 +13,8 @@ jobs:
   health-check:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -47,6 +49,38 @@ jobs:
           name: taco-perf-daily-${{ github.run_number }}
           path: results/
           retention-days: 90
+
+      - name: Prepare Pages
+        run: |
+          mkdir -p _site/reports
+          cp results/reports/*.html _site/reports/ 2>/dev/null || true
+          git fetch origin gh-pages:gh-pages 2>/dev/null || true
+          if git show gh-pages:reports/ 2>/dev/null; then
+            for f in $(git ls-tree --name-only gh-pages:reports/); do
+              if [ ! -f "_site/reports/$f" ]; then
+                git show "gh-pages:reports/$f" > "_site/reports/$f" 2>/dev/null || true
+              fi
+            done
+          fi
+          LATEST=$(ls -t _site/reports/*.html 2>/dev/null | head -1 | xargs basename 2>/dev/null)
+          if [ -n "$LATEST" ]; then
+            printf '<meta http-equiv="refresh" content="0; url=reports/%s">' "$LATEST" > _site/index.html
+          fi
+          echo '<html><head><title>TACo Performance Reports</title>' > _site/reports/index.html
+          echo '<style>body{font-family:monospace;background:#1a1a2e;color:#e0e0e0;padding:2em}a{color:#96FF5E}h1{color:#fff}</style>' >> _site/reports/index.html
+          echo '</head><body><h1>TACo Performance Reports</h1><ul>' >> _site/reports/index.html
+          for f in $(ls -t _site/reports/*.html | grep -v index.html | xargs -I{} basename {}); do
+            echo "<li><a href=\"$f\">$f</a></li>" >> _site/reports/index.html
+          done
+          echo '</ul></body></html>' >> _site/reports/index.html
+          touch _site/.nojekyll
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          keep_files: false
 
       - name: Post to Discord
         if: always()
