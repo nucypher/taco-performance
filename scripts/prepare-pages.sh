@@ -15,7 +15,7 @@ cp results/reports/*.html "$SITE_DIR/$CATEGORY/" 2>/dev/null || true
 # Fetch existing gh-pages content and merge in
 git fetch origin gh-pages:gh-pages 2>/dev/null || true
 for dir in daily analysis; do
-  if git show "gh-pages:$dir/" 2>/dev/null; then
+  if git show "gh-pages:$dir/" >/dev/null 2>&1; then
     for f in $(git ls-tree --name-only "gh-pages:$dir/"); do
       if [ ! -f "$SITE_DIR/$dir/$f" ]; then
         git show "gh-pages:$dir/$f" > "$SITE_DIR/$dir/$f" 2>/dev/null || true
@@ -24,23 +24,81 @@ for dir in daily analysis; do
   fi
 done
 
-# Helper: convert filename like 2026-02-16-163106.html to "16 Feb 2026, 16:31"
-friendly_name() {
+# Parse filename into: date, mode, rate, duration, cohort
+# New format: 2026-02-16-163106_steady_1rps_10s_c3.html  (underscore-delimited metadata)
+# Old format: 2026-02-16-163106.html
+parse_filename() {
   local fname="$1"
   local base="${fname%.html}"
-  # Handle daily-report.html or other non-timestamp names
-  if ! echo "$base" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$'; then
-    echo "$base"
+
+  # Date/time is always the first 17 chars: 2026-02-16-163106
+  local datetime="${base:0:17}"
+  if echo "$datetime" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$'; then
+    local year="${datetime:0:4}"
+    local month="${datetime:5:2}"
+    local day="${datetime:8:2}"
+    local hour="${datetime:11:2}"
+    local min="${datetime:13:2}"
+    local months=("" "Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug" "Sep" "Oct" "Nov" "Dec")
+    local mi=$((10#$month))
+    F_DATE="${day} ${months[$mi]} ${year}, ${hour}:${min}"
+  else
+    F_DATE="$base"
+    F_MODE="" ; F_RATE="" ; F_DURATION="" ; F_COHORT=""
     return
   fi
-  local year="${base:0:4}"
-  local month="${base:5:2}"
-  local day="${base:8:2}"
-  local hour="${base:11:2}"
-  local min="${base:13:2}"
-  local months=("" "Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug" "Sep" "Oct" "Nov" "Dec")
-  local mi=$((10#$month))
-  echo "${day} ${months[$mi]} ${year}, ${hour}:${min}"
+
+  # Metadata: everything after timestamp, separated by underscores
+  local rest="${base:17}"
+  rest="${rest#_}"  # strip leading underscore
+  F_MODE="" ; F_RATE="" ; F_DURATION="" ; F_COHORT=""
+
+  if [ -z "$rest" ]; then
+    return
+  fi
+
+  local IFS='_'
+  local parts=($rest)
+  unset IFS
+  for part in "${parts[@]}"; do
+    if [[ "$part" =~ ^(steady|sweep|burst)$ ]]; then
+      F_MODE="$part"
+    elif [[ "$part" =~ ^([0-9.]+)rps$ ]]; then
+      F_RATE="${BASH_REMATCH[1]} req/s"
+    elif [[ "$part" =~ ^([0-9]+)s$ ]]; then
+      F_DURATION="${BASH_REMATCH[1]}s"
+    elif [[ "$part" =~ ^c([0-9]+)$ ]]; then
+      local cid="${BASH_REMATCH[1]}"
+      case "$cid" in
+        1) F_COHORT="minimal" ;;
+        3) F_COHORT="discord" ;;
+        *) F_COHORT="cohort $cid" ;;
+      esac
+    fi
+  done
+}
+
+# Generate a table of report rows for a category
+# Args: $1=category dir path, $2=url prefix
+generate_rows() {
+  local dir="$1"
+  local prefix="$2"
+  local files
+  files=$(ls "$dir/"*.html 2>/dev/null | xargs -I{} basename {} | sort -r || true)
+  if [ -z "$files" ]; then
+    echo '<tr><td colspan="5" class="empty">No reports yet.</td></tr>'
+    return
+  fi
+  for f in $files; do
+    parse_filename "$f"
+    echo "<tr>"
+    echo "  <td><a href=\"${prefix}${f}\">${F_DATE}</a></td>"
+    echo "  <td>${F_MODE:--}</td>"
+    echo "  <td>${F_RATE:--}</td>"
+    echo "  <td>${F_DURATION:--}</td>"
+    echo "  <td>${F_COHORT:--}</td>"
+    echo "</tr>"
+  done
 }
 
 # Build index.html
@@ -60,36 +118,49 @@ cat > "$SITE_DIR/index.html" << 'HTMLEOF'
     color: #e0e0e0;
     min-height: 100vh;
   }
-  .container { max-width: 720px; margin: 0 auto; padding: 3em 2em; }
+  .container { max-width: 960px; margin: 0 auto; padding: 3em 2em; }
   .header { display: flex; align-items: center; gap: 1.5em; margin-bottom: 0.5em; }
-  .header svg { height: 40px; width: auto; }
-  .header h1 { color: #fff; font-size: 1.1em; font-weight: 400; letter-spacing: 0.05em; }
-  .subtitle { color: #666; font-size: 0.85em; margin-bottom: 3em; }
+  .header svg { height: 72px; width: auto; }
+  .header h1 { color: #fff; font-size: 2em; font-weight: 400; letter-spacing: 0.05em; }
+  .subtitle { color: #666; font-size: 1em; margin-bottom: 3em; }
   h2 {
     color: #96FF5E;
-    font-size: 0.75em;
+    font-size: 0.9em;
     font-weight: 600;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    margin-bottom: 1em;
-    padding-bottom: 0.5em;
-    border-bottom: 1px solid #1a1a1a;
+    margin-bottom: 0.75em;
   }
-  .section { margin-bottom: 2.5em; }
-  ul { list-style: none; }
-  li { padding: 0; }
-  li a {
-    display: block;
-    padding: 0.6em 0.8em;
+  .section { margin-bottom: 3em; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  th:nth-child(1) { width: 40%; }
+  th:nth-child(2), th:nth-child(3), th:nth-child(4), th:nth-child(5) { width: 15%; }
+  thead th {
+    text-align: left;
+    color: #666;
+    font-size: 0.8em;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.6em 1em;
+    border-bottom: 1px solid #222;
+  }
+  tbody tr { border-bottom: 1px solid #111; transition: background 0.15s; }
+  tbody tr:hover { background: #0a0a0a; }
+  tbody td {
+    padding: 0.75em 1em;
+    font-size: 1em;
+    color: #999;
+  }
+  tbody td:first-child { color: #ccc; }
+  tbody td a {
     color: #ccc;
     text-decoration: none;
-    font-size: 0.9em;
-    border-radius: 4px;
-    transition: background 0.15s, color 0.15s;
+    transition: color 0.15s;
   }
-  li a:hover { background: #111; color: #96FF5E; }
-  .empty { color: #444; font-size: 0.85em; padding: 0.6em 0.8em; }
-  .footer { margin-top: 3em; padding-top: 1.5em; border-top: 1px solid #1a1a1a; color: #444; font-size: 0.75em; }
+  tbody td a:hover { color: #96FF5E; }
+  .empty { color: #444; font-style: italic; text-align: center; padding: 1.5em 1em; }
+  .footer { margin-top: 3em; padding-top: 1.5em; border-top: 1px solid #1a1a1a; color: #444; font-size: 0.85em; }
   .footer a { color: #666; }
 </style>
 </head>
@@ -128,36 +199,22 @@ cat > "$SITE_DIR/index.html" << 'HTMLEOF'
 HTMLEOF
 
 # Daily section
-echo '<div class="section">' >> "$SITE_DIR/index.html"
-echo '<h2>Daily Health Checks</h2>' >> "$SITE_DIR/index.html"
-DAILY_FILES=$(ls -t "$SITE_DIR/daily/"*.html 2>/dev/null | xargs -I{} basename {} || true)
-if [ -n "$DAILY_FILES" ]; then
-  echo '<ul>' >> "$SITE_DIR/index.html"
-  for f in $DAILY_FILES; do
-    label=$(friendly_name "$f")
-    echo "<li><a href=\"daily/$f\">$label</a></li>" >> "$SITE_DIR/index.html"
-  done
-  echo '</ul>' >> "$SITE_DIR/index.html"
-else
-  echo '<p class="empty">No daily reports yet.</p>' >> "$SITE_DIR/index.html"
-fi
-echo '</div>' >> "$SITE_DIR/index.html"
+{
+  echo '<div class="section">'
+  echo '<h2>Daily Health Checks</h2>'
+  echo '<table><thead><tr><th>Date</th><th>Mode</th><th>Rate</th><th>Duration</th><th>Condition</th></tr></thead><tbody>'
+  generate_rows "$SITE_DIR/daily" "daily/"
+  echo '</tbody></table></div>'
+} >> "$SITE_DIR/index.html"
 
 # Analysis section
-echo '<div class="section">' >> "$SITE_DIR/index.html"
-echo '<h2>Ad-hoc Analysis</h2>' >> "$SITE_DIR/index.html"
-ANALYSIS_FILES=$(ls -t "$SITE_DIR/analysis/"*.html 2>/dev/null | xargs -I{} basename {} || true)
-if [ -n "$ANALYSIS_FILES" ]; then
-  echo '<ul>' >> "$SITE_DIR/index.html"
-  for f in $ANALYSIS_FILES; do
-    label=$(friendly_name "$f")
-    echo "<li><a href=\"analysis/$f\">$label</a></li>" >> "$SITE_DIR/index.html"
-  done
-  echo '</ul>' >> "$SITE_DIR/index.html"
-else
-  echo '<p class="empty">No analysis reports yet.</p>' >> "$SITE_DIR/index.html"
-fi
-echo '</div>' >> "$SITE_DIR/index.html"
+{
+  echo '<div class="section">'
+  echo '<h2>Ad-hoc Analysis</h2>'
+  echo '<table><thead><tr><th>Date</th><th>Mode</th><th>Rate</th><th>Duration</th><th>Condition</th></tr></thead><tbody>'
+  generate_rows "$SITE_DIR/analysis" "analysis/"
+  echo '</tbody></table></div>'
+} >> "$SITE_DIR/index.html"
 
 cat >> "$SITE_DIR/index.html" << 'HTMLEOF'
 <div class="footer">

@@ -3,3 +3,4 @@ results/
 .env
 *.tgz
 dist/
+_site/

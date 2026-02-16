@@ -439,10 +439,20 @@ function buildPlotlyScript(chartData: Record<string, unknown>): string {
 // CLI
 // =============================================================================
 
+function buildReportFilename(data: TestData): string {
+  const ts = generateTimestamp();
+  const mode = data.config.mode || "steady";
+  const rate = data.config.rate + "rps";
+  const dur = data.config.duration + "s";
+  const cohort = data.config.cohortId !== undefined ? "c" + data.config.cohortId : "";
+  const parts = [ts, mode, rate, dur, cohort].filter(Boolean);
+  return parts.join("_") + ".html";
+}
+
 function saveReport(data: TestData, outputPath?: string): string {
   ensureResultsDirs();
   const html = generateReport(data);
-  const filepath = outputPath || path.join(REPORTS_DIR, generateTimestamp() + ".html");
+  const filepath = outputPath || path.join(REPORTS_DIR, buildReportFilename(data));
   fs.writeFileSync(filepath, html);
   return filepath;
 }
