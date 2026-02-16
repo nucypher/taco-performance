@@ -13,36 +13,49 @@
     color: #e0e0e0;
     min-height: 100vh;
   }
-  .container { max-width: 720px; margin: 0 auto; padding: 3em 2em; }
+  .container { max-width: 960px; margin: 0 auto; padding: 3em 2em; }
   .header { display: flex; align-items: center; gap: 1.5em; margin-bottom: 0.5em; }
-  .header svg { height: 40px; width: auto; }
-  .header h1 { color: #fff; font-size: 1.1em; font-weight: 400; letter-spacing: 0.05em; }
-  .subtitle { color: #666; font-size: 0.85em; margin-bottom: 3em; }
+  .header svg { height: 72px; width: auto; }
+  .header h1 { color: #fff; font-size: 2em; font-weight: 400; letter-spacing: 0.05em; }
+  .subtitle { color: #666; font-size: 1em; margin-bottom: 3em; }
   h2 {
     color: #96FF5E;
-    font-size: 0.75em;
+    font-size: 0.9em;
     font-weight: 600;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    margin-bottom: 1em;
-    padding-bottom: 0.5em;
-    border-bottom: 1px solid #1a1a1a;
+    margin-bottom: 0.75em;
   }
-  .section { margin-bottom: 2.5em; }
-  ul { list-style: none; }
-  li { padding: 0; }
-  li a {
-    display: block;
-    padding: 0.6em 0.8em;
+  .section { margin-bottom: 3em; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  th:nth-child(1) { width: 40%; }
+  th:nth-child(2), th:nth-child(3), th:nth-child(4), th:nth-child(5) { width: 15%; }
+  thead th {
+    text-align: left;
+    color: #666;
+    font-size: 0.8em;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.6em 1em;
+    border-bottom: 1px solid #222;
+  }
+  tbody tr { border-bottom: 1px solid #111; transition: background 0.15s; }
+  tbody tr:hover { background: #0a0a0a; }
+  tbody td {
+    padding: 0.75em 1em;
+    font-size: 1em;
+    color: #999;
+  }
+  tbody td:first-child { color: #ccc; }
+  tbody td a {
     color: #ccc;
     text-decoration: none;
-    font-size: 0.9em;
-    border-radius: 4px;
-    transition: background 0.15s, color 0.15s;
+    transition: color 0.15s;
   }
-  li a:hover { background: #111; color: #96FF5E; }
-  .empty { color: #444; font-size: 0.85em; padding: 0.6em 0.8em; }
-  .footer { margin-top: 3em; padding-top: 1.5em; border-top: 1px solid #1a1a1a; color: #444; font-size: 0.75em; }
+  tbody td a:hover { color: #96FF5E; }
+  .empty { color: #444; font-style: italic; text-align: center; padding: 1.5em 1em; }
+  .footer { margin-top: 3em; padding-top: 1.5em; border-top: 1px solid #1a1a1a; color: #444; font-size: 0.85em; }
   .footer a { color: #666; }
 </style>
 </head>
@@ -80,16 +93,41 @@
 <p class="subtitle">Threshold signing network health &amp; analysis reports</p>
 <div class="section">
 <h2>Daily Health Checks</h2>
-<p class="empty">No daily reports yet.</p>
-</div>
+<table><thead><tr><th>Date</th><th>Mode</th><th>Rate</th><th>Duration</th><th>Condition</th></tr></thead><tbody>
+<tr><td colspan="5" class="empty">No reports yet.</td></tr>
+</tbody></table></div>
 <div class="section">
 <h2>Ad-hoc Analysis</h2>
-<ul>
-<li><a href="analysis/2026-02-16-163343.html">16 Feb 2026, 16:33</a></li>
-<li><a href="analysis/2026-02-16-162021.html">16 Feb 2026, 16:20</a></li>
-<li><a href="analysis/2026-02-16-164318.html">16 Feb 2026, 16:43</a></li>
-</ul>
-</div>
+<table><thead><tr><th>Date</th><th>Mode</th><th>Rate</th><th>Duration</th><th>Condition</th></tr></thead><tbody>
+<tr>
+  <td><a href="analysis/2026-02-16-170224_sweep_2rps_60s_c3.html">16 Feb 2026, 17:02</a></td>
+  <td>sweep</td>
+  <td>2 req/s</td>
+  <td>60s</td>
+  <td>discord</td>
+</tr>
+<tr>
+  <td><a href="analysis/2026-02-16-164318.html">16 Feb 2026, 16:43</a></td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+</tr>
+<tr>
+  <td><a href="analysis/2026-02-16-163343.html">16 Feb 2026, 16:33</a></td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+</tr>
+<tr>
+  <td><a href="analysis/2026-02-16-162021.html">16 Feb 2026, 16:20</a></td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+</tr>
+</tbody></table></div>
 <div class="footer">
   <a href="https://github.com/nucypher/taco-performance">nucypher/taco-performance</a>
 </div>
