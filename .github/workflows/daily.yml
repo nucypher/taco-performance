@@ -31,14 +31,14 @@ jobs:
           npx tsx src/runner.ts \
             --config=configs/daily-cohort1.yml \
             --cohort=1 --chain=84532 \
-            --json --verbose 2>&1 | tee cohort1-output.txt
+            --json 2>&1 | tee cohort1-output.txt
 
       - name: Test Cohort 3
         run: |
           npx tsx src/runner.ts \
             --config=configs/daily-cohort3.yml \
             --cohort=3 --chain=84532 \
-            --json --verbose 2>&1 | tee cohort3-output.txt
+            --json 2>&1 | tee cohort3-output.txt
 
       - name: Generate Reports
         run: npx tsx src/report.ts --latest --output=results/reports/daily-report.html

@@ -1079,7 +1079,7 @@ async function main() {
 
   // Set global state from CLI/config
   REQUEST_TIMEOUT_SECONDS = timeout;
-  VERBOSE = cliOptions.verbose || !isTTY;
+  VERBOSE = cliOptions.verbose === true;
 
   if (cliOptions.domain === "mainnet") {
     TACO_DOMAIN = domains.MAINNET;
