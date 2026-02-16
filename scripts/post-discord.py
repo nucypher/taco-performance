@@ -3,7 +3,6 @@
 
 import json
 import os
-import re
 import sys
 
 
@@ -12,11 +11,14 @@ def extract_json_summary(filepath):
     try:
         with open(filepath) as f:
             text = f.read()
-        # Find JSON blocks that look like summaries (contain "timestamp" key)
-        # The --json flag prints the summary as the last JSON blob
-        blocks = re.findall(r'\{[\s\S]*?"timestamp"[\s\S]*?\}', text)
-        if blocks:
-            return json.loads(blocks[-1])
+        # The runner prints a pretty-printed JSON object as the last block,
+        # possibly followed by a "[taco-perf] Done!" line.
+        # Find the last top-level '{' and matching '}'.
+        start = text.rfind("\n{")
+        if start != -1:
+            end = text.rfind("}")
+            if end != -1:
+                return json.loads(text[start : end + 1])
     except Exception as e:
         print(f"Warning: Could not parse {filepath}: {e}")
     return {
