@@ -1,0 +1,39 @@
+# TACo Daily Health Check - Cohort 3
+# Discord signature verification conditions
+# Requires DISCORD_PAYLOAD_* env vars to be set
+
+defaults:
+  mode: steady
+  rate: 2
+  duration: 30
+  timeout: 30
+  cooldown: 10
+
+payloads:
+  - name: "discord-tip"
+    timestamp: "1770113615"
+    signature: "75496c98bdf40c7e15d1181672b2185703134e95fd7f324158a8f9ce8bb872dd68829d896fcf1d446335025219d312213b49dac4034e8be74d9c1c8212427603"
+    recipientUserId: "412648164710023168"
+    bodyJson: >
+      {"app_permissions":"2248473465835073","application_id":"1435631642239565965",
+      "channel":{"flags":0,"guild_id":"1435631433543581777","id":"1435631434718253159",
+      "name":"general","type":0},"channel_id":"1435631434718253159","context":0,
+      "data":{"guild_id":"1435631433543581777","id":"1458831034366951614","name":"taco",
+      "options":[{"name":"execute","options":[{"name":"receiver","type":6,
+      "value":"412648164710023168"},{"name":"chain","type":3,"value":"base-sepolia"},
+      {"name":"token","type":3,"value":"USDC"},{"name":"amount","type":3,
+      "value":"0.5"}],"type":1}],"resolved":{"members":{"412648164710023168":
+      {"avatar":null,"flags":0,"joined_at":"2025-11-05T14:14:03.616000+00:00",
+      "pending":false,"permissions":"2248473465835073","roles":[]}},"users":
+      {"412648164710023168":{"avatar":"63392abfddc76f6fc0491692c1b4f38c",
+      "discriminator":"0","global_name":"derek","id":"412648164710023168",
+      "public_flags":0,"username":"derek.pierre"}}},"type":1},"entitlements":[],
+      "guild":{"features":[],"id":"1435631433543581777","locale":"en-US"},
+      "guild_id":"1435631433543581777","guild_locale":"en-US",
+      "id":"1468187659708137564","locale":"en-US","member":{"avatar":null,
+      "flags":0,"joined_at":"2025-11-05T14:06:46.688000+00:00","pending":false,
+      "permissions":"9007199254740991","roles":[],"user":{"avatar":
+      "37ac1cd7f988a248e4676aa1df23fcde","discriminator":"0","global_name":"james.c",
+      "id":"405651072460259339","public_flags":0,"username":"the.ref"}},
+      "token":"aW50ZXJhY3Rpb246MTQ2ODE4NzY1OTcwODEzNzU2NDpVa2w0cWlmWjlXc29VeXljcDBxV3R0UVhteTZIS3UwTWpNTkx3WHliNkE1WnBnSG80UWQ2UnpONzl6MmtMaHB1aW9wNTR6NVFJMzlJTDBFMWJaeExHUzQ5eE01YjJua1ZUWWpRSmlTa2dNN3EwbkJkNUJTQktVQjBHRHhCTlNIRQ",
+      "type":2,"version":1}

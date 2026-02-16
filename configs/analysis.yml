@@ -1,0 +1,20 @@
+# TACo Analysis Config
+# For detailed performance analysis after deployments
+# Use with: npx tsx src/runner.ts --config=configs/analysis.yml --domain=devnet --cohort=3
+
+defaults:
+  mode: sweep
+  duration: 60
+  rates: [0.5, 1, 2, 4, 8]
+  burstSizes: [5, 10, 20]
+  batchesPerBurst: 3
+  rate: 2
+  cooldown: 30
+  timeout: 120
+
+payloads:
+  - name: "bare-transfer"
+    senderAddress: "0x0000000000000000000000000000000000000001"
+    recipientAddress: "0x0000000000000000000000000000000000000002"
+    token: "ETH"
+    amount: "0"

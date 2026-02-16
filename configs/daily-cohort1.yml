@@ -1,0 +1,16 @@
+# TACo Daily Health Check - Cohort 1
+# Simple conditions (blocktime > 0), bare payload
+
+defaults:
+  mode: steady
+  rate: 2
+  duration: 30
+  timeout: 30
+  cooldown: 10
+
+payloads:
+  - name: "bare-transfer"
+    senderAddress: "0x0000000000000000000000000000000000000001"
+    recipientAddress: "0x0000000000000000000000000000000000000002"
+    token: "ETH"
+    amount: "0"
