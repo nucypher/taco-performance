@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Post TACo daily health check results to Discord webhook."""
 
+import glob
 import json
 import os
 import sys
@@ -26,6 +27,40 @@ def extract_json_summary(filepath):
     }
 
 
+PAGES_BASE = "https://nucypher.github.io/taco-performance/daily/"
+
+
+def find_report(cohort_suffix):
+    """Find the most recent report file for a cohort (e.g. '_c1.html')."""
+    matches = sorted(glob.glob(f"results/reports/*{cohort_suffix}"))
+    if matches:
+        return os.path.basename(matches[-1])
+    return None
+
+
+def status_emoji(rate):
+    if rate >= 95:
+        return "\u2705"  # green check
+    if rate >= 80:
+        return "\u26a0\ufe0f"  # warning
+    return "\u274c"  # red X
+
+
+def fmt_cohort(label, r, report_url=None):
+    success = r.get("success", 0)
+    total = r.get("total", 0)
+    rate = round(r.get("successRate", 0), 1)
+    p50 = round(r.get("p50", 0) / 1000, 2)
+    p95 = round(r.get("p95", 0) / 1000, 2)
+    emoji = status_emoji(rate)
+    title = f"**[{label}]({report_url})**" if report_url else f"**{label}**"
+    return (
+        f"{emoji} {title}\n"
+        f"\u2003{success}/{total} passed \u00b7 **{rate}%**\n"
+        f"\u2003p50 `{p50}s` \u00b7 p95 `{p95}s`"
+    )
+
+
 def main():
     if len(sys.argv) < 3:
         print("Usage: post-discord.py <cohort1-output.txt> <cohort3-output.txt>")
@@ -37,17 +72,8 @@ def main():
     c1r = c1.get("results", [{}])[0]
     c3r = c3.get("results", [{}])[0]
 
-    c1_success = c1r.get("success", 0)
-    c1_total = c1r.get("total", 0)
     c1_rate = round(c1r.get("successRate", 0), 1)
-    c1_p50 = round(c1r.get("p50", 0) / 1000, 2)
-    c1_p95 = round(c1r.get("p95", 0) / 1000, 2)
-
-    c3_success = c3r.get("success", 0)
-    c3_total = c3r.get("total", 0)
     c3_rate = round(c3r.get("successRate", 0), 1)
-    c3_p50 = round(c3r.get("p50", 0) / 1000, 2)
-    c3_p95 = round(c3r.get("p95", 0) / 1000, 2)
 
     min_rate = min(c1_rate, c3_rate)
     if min_rate >= 95:
@@ -61,22 +87,23 @@ def main():
 
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
+    c1_report = find_report("_c1.html")
+    c3_report = find_report("_c3.html")
+    c1_url = PAGES_BASE + c1_report if c1_report else None
+    c3_url = PAGES_BASE + c3_report if c3_report else None
+
     description = (
-        f"**Cohort 1** (simple conditions)\n"
-        f"  {c1_success}/{c1_total} succeeded ({c1_rate}%)\n"
-        f"  p50 {c1_p50}s  p95 {c1_p95}s\n\n"
-        f"**Cohort 3** (Discord verification)\n"
-        f"  {c3_success}/{c3_total} succeeded ({c3_rate}%)\n"
-        f"  p50 {c3_p50}s  p95 {c3_p95}s\n\n"
-        f"Domain: lynx"
+        f"{fmt_cohort('Simple conditions', c1r, c1_url)}\n\n"
+        f"{fmt_cohort('Discord verification', c3r, c3_url)}"
     )
 
     embed = {
         "embeds": [
             {
-                "title": f"TACo Daily Health Check \u2014 {timestamp}",
+                "title": f"Daily Health Check \u2014 {timestamp}",
                 "description": description,
                 "color": color,
+                "footer": {"text": "lynx \u00b7 base-sepolia"},
             }
         ]
     }
