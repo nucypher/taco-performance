@@ -1,0 +1,26 @@
+{
+  "name": "taco-perf",
+  "version": "0.1.0",
+  "description": "TACo network performance monitor and analysis tool",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "author": "NuCypher <dev@nucypher.com>",
+  "scripts": {
+    "test": "tsx src/runner.ts",
+    "report": "tsx src/report.ts"
+  },
+  "dependencies": {
+    "@metamask/delegation-toolkit": "^0.11.0",
+    "@nucypher/shared": "file:../taco-web/packages/shared",
+    "@nucypher/taco": "file:../taco-web/packages/taco",
+    "dotenv": "^16.6.1",
+    "ethers": "^5.8.0",
+    "viem": "^2.34.0",
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.9",
+    "tsx": "^4.20.4",
+    "typescript": "^5.7.2"
+  }
+}
