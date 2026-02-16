@@ -941,7 +941,7 @@ function parseArgs(args: string[]): CLIOptions {
     else if (arg === "--verbose" || arg === "-v") options.verbose = true;
     else if (arg === "--json") options.json = true;
     else if (arg.startsWith("--domain=")) options.domain = arg.slice(9);
-    else if (arg.startsWith("--cohort=")) options.cohortId = parseInt(arg.slice(8), 10);
+    else if (arg.startsWith("--cohort=")) options.cohortId = parseInt(arg.slice(9), 10);
     else if (arg.startsWith("--chain=")) options.chainId = parseInt(arg.slice(8), 10);
   }
   return options;
