@@ -83,8 +83,7 @@ RPC URLs are constructed automatically from API keys. The `--domain` flag determ
 
 | Variable | Description |
 |----------|-------------|
-| `INFURA_API_KEY` | Infura API key — constructs coordinator RPC URLs (Sepolia / Ethereum) |
-| `SIGNING_CHAIN_RPC_URL` | Signing chain RPC endpoint (Base Sepolia or Base) |
+| `INFURA_API_KEY` | Infura API key — constructs RPC URLs for Sepolia, Base Sepolia, Ethereum, and Base |
 | `PIMLICO_API_KEY` | Pimlico API key — constructs bundler/paymaster URLs per chain ID |
 | `DISCORD_WEBHOOK_URL` | Discord webhook for daily reports (CI only) |
 
@@ -105,7 +104,7 @@ Triggered manually via `workflow_dispatch` with inputs for domain, cohort, chain
 
 ### Required Secrets
 
-`INFURA_API_KEY`, `SIGNING_CHAIN_RPC_URL`, `PIMLICO_API_KEY`, `DISCORD_WEBHOOK_URL`
+`INFURA_API_KEY`, `PIMLICO_API_KEY`, `DISCORD_WEBHOOK_URL`
 
 ## Test Configs
 
