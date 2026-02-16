@@ -6,12 +6,8 @@ on:
   workflow_dispatch:
 
 env:
-  ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
-  SIGNING_CHAIN_RPC_URL: ${{ secrets.SIGNING_CHAIN_RPC_URL }}
-  BUNDLER_URL: ${{ secrets.BUNDLER_URL }}
-  MAINNET_ETH_RPC_URL: ${{ secrets.MAINNET_ETH_RPC_URL }}
-  MAINNET_SIGNING_CHAIN_RPC_URL: ${{ secrets.MAINNET_SIGNING_CHAIN_RPC_URL }}
-  MAINNET_BUNDLER_URL: ${{ secrets.MAINNET_BUNDLER_URL }}
+  INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }}
+  PIMLICO_API_KEY: ${{ secrets.PIMLICO_API_KEY }}
 
 jobs:
   health-check:

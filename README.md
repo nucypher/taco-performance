@@ -6,7 +6,7 @@ Performance monitor and analysis tool for the [TACo](https://threshold.network/t
 
 ```bash
 cp .env.example .env
-# Fill in RPC URLs and bundler key
+# Fill in your Infura and Pimlico API keys
 
 npm install
 
@@ -79,17 +79,13 @@ Reports are self-contained HTML files using [Plotly.js](https://plotly.com/javas
 
 ## Environment Variables
 
-RPC URLs are resolved based on the `--domain` flag. Mainnet vars are prefixed with `MAINNET_` and fall back to the unprefixed versions if not set.
+RPC URLs are constructed automatically from API keys. The `--domain` flag determines which Infura endpoints and Pimlico chain IDs are used.
 
-| Variable | Domain | Description |
-|----------|--------|-------------|
-| `ETH_RPC_URL` | devnet | Sepolia RPC (signing coordinator) |
-| `SIGNING_CHAIN_RPC_URL` | devnet | Base Sepolia RPC (signing chain) |
-| `BUNDLER_URL` | devnet | ERC-4337 bundler (Pimlico) |
-| `MAINNET_ETH_RPC_URL` | mainnet | Ethereum mainnet RPC |
-| `MAINNET_SIGNING_CHAIN_RPC_URL` | mainnet | Base mainnet RPC |
-| `MAINNET_BUNDLER_URL` | mainnet | Mainnet bundler |
-| `DISCORD_WEBHOOK_URL` | — | Discord webhook (CI only) |
+| Variable | Description |
+|----------|-------------|
+| `INFURA_API_KEY` | Infura API key — constructs RPC URLs for Sepolia, Base Sepolia, Ethereum, and Base |
+| `PIMLICO_API_KEY` | Pimlico API key — constructs bundler/paymaster URLs per chain ID (optional) |
+| `DISCORD_WEBHOOK_URL` | Discord webhook for daily reports (CI only) |
 
 ## CI/CD
 
@@ -108,7 +104,7 @@ Triggered manually via `workflow_dispatch` with inputs for domain, cohort, chain
 
 ### Required Secrets
 
-`ETH_RPC_URL`, `SIGNING_CHAIN_RPC_URL`, `BUNDLER_URL`, `MAINNET_ETH_RPC_URL`, `MAINNET_SIGNING_CHAIN_RPC_URL`, `MAINNET_BUNDLER_URL`, `DISCORD_WEBHOOK_URL`
+`INFURA_API_KEY`, `PIMLICO_API_KEY`, `DISCORD_WEBHOOK_URL`
 
 ## Test Configs
 

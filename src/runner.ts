@@ -228,21 +228,29 @@ async function initializeClients(): Promise<void> {
   if (VERBOSE) console.log("[taco-perf] Initializing...");
   await initialize();
 
-  // Resolve RPC URLs based on domain
+  // Resolve RPC URLs based on domain using INFURA_API_KEY
   // Devnet (lynx): coordinator on Sepolia, signing chain on Base Sepolia
   // Mainnet: coordinator on Ethereum, signing chain on Base
-  const prefix = TACO_DOMAIN === domains.MAINNET ? "MAINNET_" : "";
-  const coordinatorRpc = process.env[prefix + "ETH_RPC_URL"] || process.env.ETH_RPC_URL;
-  const signingChainRpc = process.env[prefix + "SIGNING_CHAIN_RPC_URL"] || process.env.SIGNING_CHAIN_RPC_URL;
-  const bundlerUrl = process.env[prefix + "BUNDLER_URL"] || process.env.BUNDLER_URL;
+  const infuraKey = process.env.INFURA_API_KEY;
+  if (!infuraKey) throw new Error("INFURA_API_KEY is not set");
 
-  if (!coordinatorRpc) throw new Error(prefix + "ETH_RPC_URL is not set");
-  if (!signingChainRpc) throw new Error(prefix + "SIGNING_CHAIN_RPC_URL is not set");
-  if (!bundlerUrl) throw new Error(prefix + "BUNDLER_URL is not set");
+  const isMainnet = TACO_DOMAIN === domains.MAINNET;
+  const coordinatorRpc = isMainnet
+    ? "https://mainnet.infura.io/v3/" + infuraKey
+    : "https://sepolia.infura.io/v3/" + infuraKey;
+  const signingChainRpc = isMainnet
+    ? "https://base-mainnet.infura.io/v3/" + infuraKey
+    : "https://base-sepolia.infura.io/v3/" + infuraKey;
+
+  const pimlicoKey = process.env.PIMLICO_API_KEY;
+  const bundlerUrl = pimlicoKey
+    ? "https://api.pimlico.io/v2/" + CHAIN_ID + "/rpc?apikey=" + pimlicoKey
+    : undefined;
 
   if (VERBOSE) {
-    console.log("[taco-perf] Coordinator RPC: " + coordinatorRpc.replace(/(api[_-]?key=)[^&]+/i, "***"));
-    console.log("[taco-perf] Signing chain RPC: " + signingChainRpc.replace(/(api[_-]?key=)[^&]+/i, "***"));
+    console.log("[taco-perf] Coordinator RPC: " + coordinatorRpc.replace(/v3\/.*/, "v3/***"));
+    console.log("[taco-perf] Signing chain RPC: " + signingChainRpc.replace(/v3\/.*/, "v3/***"));
+    if (bundlerUrl) console.log("[taco-perf] Bundler: " + bundlerUrl.replace(/apikey=[^&]+/i, "apikey=***"));
   }
 
   signingCoordinatorProvider = new ethers.providers.JsonRpcProvider(coordinatorRpc);
