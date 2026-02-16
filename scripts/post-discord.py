@@ -5,7 +5,6 @@ import json
 import os
 import re
 import sys
-import urllib.request
 
 
 def extract_json_summary(filepath):
@@ -20,7 +19,9 @@ def extract_json_summary(filepath):
             return json.loads(blocks[-1])
     except Exception as e:
         print(f"Warning: Could not parse {filepath}: {e}")
-    return {"results": [{"success": 0, "total": 0, "successRate": 0, "p50": 0, "p95": 0}]}
+    return {
+        "results": [{"success": 0, "total": 0, "successRate": 0, "p50": 0, "p95": 0}]
+    }
 
 
 def main():
@@ -48,13 +49,14 @@ def main():
 
     min_rate = min(c1_rate, c3_rate)
     if min_rate >= 95:
-        color = 5832542   # green
+        color = 5832542  # green
     elif min_rate >= 80:
         color = 16750374  # yellow
     else:
         color = 15684432  # red
 
     from datetime import datetime, timezone
+
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     description = (
@@ -68,22 +70,45 @@ def main():
     )
 
     embed = {
-        "embeds": [{
-            "title": f"TACo Daily Health Check \u2014 {timestamp}",
-            "description": description,
-            "color": color,
-        }]
+        "embeds": [
+            {
+                "title": f"TACo Daily Health Check \u2014 {timestamp}",
+                "description": description,
+                "color": color,
+            }
+        ]
     }
 
     webhook_url = os.environ.get("DISCORD_WEBHOOK_URL", "")
     if webhook_url:
-        req = urllib.request.Request(
-            webhook_url,
-            data=json.dumps(embed).encode(),
-            headers={"Content-Type": "application/json"},
+        import subprocess
+
+        result = subprocess.run(
+            [
+                "curl",
+                "-s",
+                "-o",
+                "/dev/null",
+                "-w",
+                "%{http_code}",
+                "-X",
+                "POST",
+                "-H",
+                "Content-Type: application/json",
+                "-d",
+                json.dumps(embed),
+                webhook_url,
+            ],
+            capture_output=True,
+            text=True,
         )
-        urllib.request.urlopen(req)
-        print("Posted to Discord")
+        status = result.stdout.strip()
+        if status in ("200", "204"):
+            print(f"Posted to Discord (HTTP {status})")
+        else:
+            print(f"Discord webhook failed (HTTP {status})")
+            print(result.stderr)
+            sys.exit(1)
     else:
         print("DISCORD_WEBHOOK_URL not set, skipping")
         print(json.dumps(embed, indent=2))
