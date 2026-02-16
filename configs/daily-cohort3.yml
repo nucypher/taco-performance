@@ -1,6 +1,5 @@
 # TACo Daily Health Check - Cohort 3
 # Discord signature verification conditions
-# Requires DISCORD_PAYLOAD_* env vars to be set
 
 defaults:
   mode: steady
@@ -14,26 +13,4 @@ payloads:
     timestamp: "1770113615"
     signature: "75496c98bdf40c7e15d1181672b2185703134e95fd7f324158a8f9ce8bb872dd68829d896fcf1d446335025219d312213b49dac4034e8be74d9c1c8212427603"
     recipientUserId: "412648164710023168"
-    bodyJson: >
-      {"app_permissions":"2248473465835073","application_id":"1435631642239565965",
-      "channel":{"flags":0,"guild_id":"1435631433543581777","id":"1435631434718253159",
-      "name":"general","type":0},"channel_id":"1435631434718253159","context":0,
-      "data":{"guild_id":"1435631433543581777","id":"1458831034366951614","name":"taco",
-      "options":[{"name":"execute","options":[{"name":"receiver","type":6,
-      "value":"412648164710023168"},{"name":"chain","type":3,"value":"base-sepolia"},
-      {"name":"token","type":3,"value":"USDC"},{"name":"amount","type":3,
-      "value":"0.5"}],"type":1}],"resolved":{"members":{"412648164710023168":
-      {"avatar":null,"flags":0,"joined_at":"2025-11-05T14:14:03.616000+00:00",
-      "pending":false,"permissions":"2248473465835073","roles":[]}},"users":
-      {"412648164710023168":{"avatar":"63392abfddc76f6fc0491692c1b4f38c",
-      "discriminator":"0","global_name":"derek","id":"412648164710023168",
-      "public_flags":0,"username":"derek.pierre"}}},"type":1},"entitlements":[],
-      "guild":{"features":[],"id":"1435631433543581777","locale":"en-US"},
-      "guild_id":"1435631433543581777","guild_locale":"en-US",
-      "id":"1468187659708137564","locale":"en-US","member":{"avatar":null,
-      "flags":0,"joined_at":"2025-11-05T14:06:46.688000+00:00","pending":false,
-      "permissions":"9007199254740991","roles":[],"user":{"avatar":
-      "37ac1cd7f988a248e4676aa1df23fcde","discriminator":"0","global_name":"james.c",
-      "id":"405651072460259339","public_flags":0,"username":"the.ref"}},
-      "token":"aW50ZXJhY3Rpb246MTQ2ODE4NzY1OTcwODEzNzU2NDpVa2w0cWlmWjlXc29VeXljcDBxV3R0UVhteTZIS3UwTWpNTkx3WHliNkE1WnBnSG80UWQ2UnpONzl6MmtMaHB1aW9wNTR6NVFJMzlJTDBFMWJaeExHUzQ5eE01YjJua1ZUWWpRSmlTa2dNN3EwbkJkNUJTQktVQjBHRHhCTlNIRQ",
-      "type":2,"version":1}
+    bodyJson: '{"app_permissions":"2248473465835073","application_id":"1435631642239565965","attachment_size_limit":10485760,"authorizing_integration_owners":{"0":"1435631433543581777"},"channel":{"flags":0,"guild_id":"1435631433543581777","icon_emoji":{"id":null,"name":"👋"},"id":"1435631434718253159","last_message_id":"1468187204861034557","name":"general","nsfw":false,"parent_id":"1435631434718253157","permissions":"9007199254740991","position":0,"rate_limit_per_user":0,"theme_color":null,"topic":null,"type":0},"channel_id":"1435631434718253159","context":0,"data":{"guild_id":"1435631433543581777","id":"1458831034366951614","name":"taco","options":[{"name":"execute","options":[{"name":"receiver","type":6,"value":"412648164710023168"},{"name":"chain","type":3,"value":"base-sepolia"},{"name":"token","type":3,"value":"USDC"},{"name":"amount","type":3,"value":"0.5"}],"type":1}],"resolved":{"members":{"412648164710023168":{"avatar":null,"banner":null,"collectibles":null,"communication_disabled_until":null,"display_name_styles":null,"flags":0,"joined_at":"2025-11-05T14:14:03.616000+00:00","nick":null,"pending":false,"permissions":"2248473465835073","premium_since":null,"roles":[],"unusual_dm_activity_until":null}},"users":{"412648164710023168":{"avatar":"63392abfddc76f6fc0491692c1b4f38c","avatar_decoration_data":null,"clan":null,"collectibles":null,"discriminator":"0","display_name_styles":null,"global_name":"derek","id":"412648164710023168","primary_guild":null,"public_flags":0,"username":"derek.pierre"}}},"type":1},"entitlement_sku_ids":[],"entitlements":[],"guild":{"features":[],"id":"1435631433543581777","locale":"en-US"},"guild_id":"1435631433543581777","guild_locale":"en-US","id":"1468187659708137564","locale":"en-US","member":{"avatar":null,"banner":null,"collectibles":null,"communication_disabled_until":null,"deaf":false,"display_name_styles":null,"flags":0,"joined_at":"2025-11-05T14:06:46.688000+00:00","mute":false,"nick":null,"pending":false,"permissions":"9007199254740991","premium_since":null,"roles":[],"unusual_dm_activity_until":null,"user":{"avatar":"37ac1cd7f988a248e4676aa1df23fcde","avatar_decoration_data":null,"clan":{"badge":"249ec50deb082d1756863906003f6a4c","identity_enabled":true,"identity_guild_id":"411401661714792449","tag":"TACo"},"collectibles":null,"discriminator":"0","display_name_styles":null,"global_name":"james.c","id":"405651072460259339","primary_guild":{"badge":"249ec50deb082d1756863906003f6a4c","identity_enabled":true,"identity_guild_id":"411401661714792449","tag":"TACo"},"public_flags":0,"username":"the.ref"}},"token":"aW50ZXJhY3Rpb246MTQ2ODE4NzY1OTcwODEzNzU2NDpVa2w0cWlmWjlXc29VeXljcDBxV3R0UVhteTZIS3UwTWpNTkx3WHliNkE1WnBnSG80UWQ2UnpONzl6MmtMaHB1aW9wNTR6NVFJMzlJTDBFMWJaeExHUzQ5eE01YjJua1ZUWWpRSmlTa2dNN3EwbkJkNUJTQktVQjBHRHhCTlNIRQ","type":2,"version":1}'
