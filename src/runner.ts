@@ -13,6 +13,7 @@ import * as dotenv from "dotenv";
 import { ethers } from "ethers";
 import * as fs from "fs";
 import * as path from "path";
+import { parseArgs as nodeParseArgs } from "node:util";
 import YAML from "yaml";
 import { createPublicClient, encodeFunctionData, http, Address } from "viem";
 import {
@@ -925,26 +926,47 @@ function getLatestDataFile(): string | null {
 // =============================================================================
 
 function parseArgs(args: string[]): CLIOptions {
-  const options: CLIOptions = { config: "" };
-  for (const arg of args) {
-    if (arg.startsWith("--config=")) options.config = arg.slice(9);
-    else if (arg.startsWith("--mode=")) options.mode = arg.slice(7) as "steady" | "burst" | "sweep";
-    else if (arg.startsWith("--rate=")) options.rate = parseFloat(arg.slice(7));
-    else if (arg.startsWith("--duration=")) options.duration = parseInt(arg.slice(11), 10);
-    else if (arg.startsWith("--requests=")) options.requests = parseInt(arg.slice(11), 10);
-    else if (arg.startsWith("--rates=")) options.rates = arg.slice(8).split(",").map((r) => parseFloat(r.trim()));
-    else if (arg.startsWith("--output=")) options.output = arg.slice(9);
-    else if (arg.startsWith("--from-data=")) options.fromData = arg.slice(12);
-    else if (arg === "--regenerate") options.regenerate = true;
-    else if (arg.startsWith("--max-duration=")) options.maxDuration = parseInt(arg.slice(15), 10);
-    else if (arg.startsWith("--max-failures=")) options.maxConsecutiveFailures = parseInt(arg.slice(15), 10);
-    else if (arg === "--verbose" || arg === "-v") options.verbose = true;
-    else if (arg === "--json") options.json = true;
-    else if (arg.startsWith("--domain=")) options.domain = arg.slice(9);
-    else if (arg.startsWith("--cohort=")) options.cohortId = parseInt(arg.slice(9), 10);
-    else if (arg.startsWith("--chain=")) options.chainId = parseInt(arg.slice(8), 10);
-  }
-  return options;
+  const { values } = nodeParseArgs({
+    args,
+    options: {
+      config:        { type: "string" },
+      mode:          { type: "string" },
+      rate:          { type: "string" },
+      duration:      { type: "string" },
+      requests:      { type: "string" },
+      rates:         { type: "string" },
+      output:        { type: "string" },
+      "from-data":   { type: "string" },
+      regenerate:    { type: "boolean" },
+      "max-duration": { type: "string" },
+      "max-failures": { type: "string" },
+      verbose:       { type: "boolean", short: "v" },
+      json:          { type: "boolean" },
+      domain:        { type: "string" },
+      cohort:        { type: "string" },
+      chain:         { type: "string" },
+    },
+    strict: false,
+  });
+
+  return {
+    config: (values.config as string) || "",
+    mode: values.mode as CLIOptions["mode"],
+    rate: values.rate ? parseFloat(values.rate as string) : undefined,
+    duration: values.duration ? parseInt(values.duration as string, 10) : undefined,
+    requests: values.requests ? parseInt(values.requests as string, 10) : undefined,
+    rates: values.rates ? (values.rates as string).split(",").map((r) => parseFloat(r.trim())) : undefined,
+    output: values.output as string | undefined,
+    fromData: values["from-data"] as string | undefined,
+    regenerate: values.regenerate as boolean | undefined,
+    maxDuration: values["max-duration"] ? parseInt(values["max-duration"] as string, 10) : undefined,
+    maxConsecutiveFailures: values["max-failures"] ? parseInt(values["max-failures"] as string, 10) : undefined,
+    verbose: values.verbose as boolean | undefined,
+    json: values.json as boolean | undefined,
+    domain: values.domain as string | undefined,
+    cohortId: values.cohort ? parseInt(values.cohort as string, 10) : undefined,
+    chainId: values.chain ? parseInt(values.chain as string, 10) : undefined,
+  };
 }
 
 function loadConfig(cliOptions: CLIOptions): {
