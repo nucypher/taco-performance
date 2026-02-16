@@ -42,6 +42,7 @@ on:
 
 env:
   INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }}
+  SIGNING_CHAIN_RPC_URL: ${{ secrets.SIGNING_CHAIN_RPC_URL }}
   PIMLICO_API_KEY: ${{ secrets.PIMLICO_API_KEY }}
 
 jobs:

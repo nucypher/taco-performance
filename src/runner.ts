@@ -239,9 +239,9 @@ async function initializeClients(): Promise<void> {
   const coordinatorRpc = isMainnet
     ? "https://mainnet.infura.io/v3/" + infuraKey
     : "https://sepolia.infura.io/v3/" + infuraKey;
-  const signingChainRpc = isMainnet
-    ? "https://base-mainnet.infura.io/v3/" + infuraKey
-    : "https://base-sepolia.infura.io/v3/" + infuraKey;
+
+  const signingChainRpc = process.env.SIGNING_CHAIN_RPC_URL;
+  if (!signingChainRpc) throw new Error("SIGNING_CHAIN_RPC_URL is not set");
 
   const pimlicoKey = process.env.PIMLICO_API_KEY;
   const bundlerUrl = pimlicoKey
@@ -250,7 +250,7 @@ async function initializeClients(): Promise<void> {
 
   if (VERBOSE) {
     console.log("[taco-perf] Coordinator RPC: " + coordinatorRpc.replace(/v3\/.*/, "v3/***"));
-    console.log("[taco-perf] Signing chain RPC: " + signingChainRpc.replace(/v3\/.*/, "v3/***"));
+    console.log("[taco-perf] Signing chain RPC: " + signingChainRpc.replace(/(https?:\/\/)[^/]+/, "\***"));
     if (bundlerUrl) console.log("[taco-perf] Bundler: " + bundlerUrl.replace(/apikey=[^&]+/i, "apikey=***"));
   }
 
