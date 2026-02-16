@@ -254,8 +254,10 @@ async function initializeClients(): Promise<void> {
     if (bundlerUrl) console.log("[taco-perf] Bundler: " + bundlerUrl.replace(/apikey=[^&]+/i, "apikey=***"));
   }
 
-  signingCoordinatorProvider = new ethers.providers.JsonRpcProvider(coordinatorRpc);
-  signingChainProvider = new ethers.providers.JsonRpcProvider(signingChainRpc);
+  const coordinatorNetwork = isMainnet ? { name: "mainnet", chainId: 1 } : { name: "sepolia", chainId: 11155111 };
+  const signingChainNetwork = isMainnet ? { name: "base", chainId: 8453 } : { name: "base-sepolia", chainId: 84532 };
+  signingCoordinatorProvider = new ethers.providers.JsonRpcProvider(coordinatorRpc, coordinatorNetwork);
+  signingChainProvider = new ethers.providers.JsonRpcProvider(signingChainRpc, signingChainNetwork);
   const chain = CHAINS[CHAIN_ID] || baseSepolia;
   publicClient = createPublicClient({ chain, transport: http(signingChainRpc) });
   const paymasterClient = createPaymasterClient({ transport: http(bundlerUrl) });
