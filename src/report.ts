@@ -13,6 +13,7 @@
 
 import * as fs from "fs";
 import * as path from "path";
+import { parseArgs } from "node:util";
 import type { TestData, RunResult, Stats, ErrorWithCount, TimelineRequest } from "./types";
 
 const RESULTS_DIR = "results";
@@ -447,22 +448,27 @@ function saveReport(data: TestData, outputPath?: string): string {
 }
 
 function main() {
-  const args = process.argv.slice(2);
-  let dataPath: string | null = null;
-  let outputPath: string | undefined;
+  const { values, positionals } = parseArgs({
+    args: process.argv.slice(2),
+    options: {
+      latest: { type: "boolean" },
+      output: { type: "string" },
+    },
+    strict: false,
+    allowPositionals: true,
+  });
 
-  for (const arg of args) {
-    if (arg === "--latest") {
-      dataPath = getLatestDataFile();
-      if (!dataPath) {
-        console.error("Error: No data files found in results/data/");
-        process.exit(1);
-      }
-    } else if (arg.startsWith("--output=")) {
-      outputPath = arg.slice(9);
-    } else if (!arg.startsWith("--")) {
-      dataPath = arg;
+  let dataPath: string | null = null;
+  let outputPath = values.output as string | undefined;
+
+  if (values.latest) {
+    dataPath = getLatestDataFile();
+    if (!dataPath) {
+      console.error("Error: No data files found in results/data/");
+      process.exit(1);
     }
+  } else if (positionals.length > 0) {
+    dataPath = positionals[0];
   }
 
   if (!dataPath) {
