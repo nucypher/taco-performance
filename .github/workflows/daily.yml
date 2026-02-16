@@ -1,0 +1,59 @@
+name: Daily Health Check
+
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+env:
+  ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
+  SIGNING_CHAIN_RPC_URL: ${{ secrets.SIGNING_CHAIN_RPC_URL }}
+  BUNDLER_URL: ${{ secrets.BUNDLER_URL }}
+  MAINNET_ETH_RPC_URL: ${{ secrets.MAINNET_ETH_RPC_URL }}
+  MAINNET_SIGNING_CHAIN_RPC_URL: ${{ secrets.MAINNET_SIGNING_CHAIN_RPC_URL }}
+  MAINNET_BUNDLER_URL: ${{ secrets.MAINNET_BUNDLER_URL }}
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Test Cohort 1
+        run: |
+          npx tsx src/runner.ts \
+            --config=configs/daily-cohort1.yml \
+            --cohort=1 --chain=84532 \
+            --json --verbose 2>&1 | tee cohort1-output.txt
+
+      - name: Test Cohort 3
+        run: |
+          npx tsx src/runner.ts \
+            --config=configs/daily-cohort3.yml \
+            --cohort=3 --chain=84532 \
+            --json --verbose 2>&1 | tee cohort3-output.txt
+
+      - name: Generate Reports
+        run: npx tsx src/report.ts --latest --output=results/reports/daily-report.html
+
+      - name: Upload Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: taco-perf-daily-${{ github.run_number }}
+          path: results/
+          retention-days: 90
+
+      - name: Post to Discord
+        if: always()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python3 scripts/post-discord.py cohort1-output.txt cohort3-output.txt

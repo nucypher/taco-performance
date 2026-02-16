@@ -1,0 +1,86 @@
+name: Performance Analysis
+
+on:
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: "TACo domain (devnet or mainnet)"
+        required: true
+        default: devnet
+        type: choice
+        options:
+          - devnet
+          - mainnet
+      cohort_id:
+        description: "Cohort ID"
+        required: true
+        default: "1"
+        type: string
+      chain_id:
+        description: "Chain ID (84532=Base Sepolia, 8453=Base)"
+        required: true
+        default: "84532"
+        type: string
+      mode:
+        description: "Test mode"
+        required: true
+        default: steady
+        type: choice
+        options:
+          - steady
+          - sweep
+      rate:
+        description: "Request rate (req/s)"
+        required: true
+        default: "2"
+        type: string
+      duration:
+        description: "Duration per rate (seconds)"
+        required: true
+        default: "60"
+        type: string
+
+env:
+  ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
+  SIGNING_CHAIN_RPC_URL: ${{ secrets.SIGNING_CHAIN_RPC_URL }}
+  BUNDLER_URL: ${{ secrets.BUNDLER_URL }}
+  MAINNET_ETH_RPC_URL: ${{ secrets.MAINNET_ETH_RPC_URL }}
+  MAINNET_SIGNING_CHAIN_RPC_URL: ${{ secrets.MAINNET_SIGNING_CHAIN_RPC_URL }}
+  MAINNET_BUNDLER_URL: ${{ secrets.MAINNET_BUNDLER_URL }}
+
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run Analysis
+        run: |
+          npx tsx src/runner.ts \
+            --config=configs/analysis.yml \
+            --domain=${{ inputs.domain }} \
+            --cohort=${{ inputs.cohort_id }} \
+            --chain=${{ inputs.chain_id }} \
+            --mode=${{ inputs.mode }} \
+            --rate=${{ inputs.rate }} \
+            --duration=${{ inputs.duration }} \
+            --verbose
+
+      - name: Generate Report
+        run: npx tsx src/report.ts --latest
+
+      - name: Upload Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: taco-perf-analysis-${{ github.run_number }}
+          path: results/
+          retention-days: 90
