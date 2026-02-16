@@ -130,6 +130,3 @@ scripts/       — CI helper scripts
 .github/       — GitHub Actions workflows
 ```
 
-## Dependencies
-
-The `@nucypher/taco` and `@nucypher/shared` packages are linked locally from `../taco-web/packages/`. For CI, these need to be published to npm or the workflow needs access to the taco-web repo.

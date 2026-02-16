@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "@metamask/delegation-toolkit": "^0.11.0",
-    "@nucypher/shared": "file:../taco-web/packages/shared",
-    "@nucypher/taco": "file:../taco-web/packages/taco",
+    "@nucypher/shared": "0.6.0-alpha.11",
+    "@nucypher/taco": "0.7.0-alpha.11",
     "dotenv": "^16.6.1",
     "ethers": "^5.8.0",
     "viem": "^2.34.0",
