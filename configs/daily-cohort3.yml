@@ -5,7 +5,7 @@ defaults:
   mode: steady
   rate: 2
   duration: 30
-  timeout: 30
+  timeout: 120
   cooldown: 10
 
 payloads:
