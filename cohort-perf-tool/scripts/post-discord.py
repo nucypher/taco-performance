@@ -31,8 +31,13 @@ PAGES_BASE = "https://nucypher.github.io/taco-performance/daily/"
 
 
 def find_report(cohort_suffix):
-    """Find the most recent report file for a cohort (e.g. '_c1.html')."""
+    """Find the most recent report file for a cohort (e.g. '_c1_devnet.html')."""
     matches = sorted(glob.glob(f"results/reports/*{cohort_suffix}"))
+    if matches:
+        return os.path.basename(matches[-1])
+    # Fallback: try without domain suffix for old reports
+    old_suffix = cohort_suffix.rsplit("_", 1)[0] + ".html"
+    matches = sorted(glob.glob(f"results/reports/*{old_suffix}"))
     if matches:
         return os.path.basename(matches[-1])
     return None
@@ -62,20 +67,25 @@ def fmt_cohort(label, r, report_url=None):
 
 
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: post-discord.py <cohort1-output.txt> <cohort3-output.txt>")
+    if len(sys.argv) < 4:
+        print(
+            "Usage: post-discord.py <cohort1-output.txt> <cohort3-output.txt> <cohort4-output.txt>"
+        )
         sys.exit(1)
 
     c1 = extract_json_summary(sys.argv[1])
     c3 = extract_json_summary(sys.argv[2])
+    c4 = extract_json_summary(sys.argv[3])
 
     c1r = c1.get("results", [{}])[0]
     c3r = c3.get("results", [{}])[0]
+    c4r = c4.get("results", [{}])[0]
 
     c1_rate = round(c1r.get("successRate", 0), 1)
     c3_rate = round(c3r.get("successRate", 0), 1)
+    c4_rate = round(c4r.get("successRate", 0), 1)
 
-    min_rate = min(c1_rate, c3_rate)
+    min_rate = min(c1_rate, c3_rate, c4_rate)
     if min_rate >= 95:
         color = 5832542  # green
     elif min_rate >= 80:
@@ -87,14 +97,19 @@ def main():
 
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    c1_report = find_report("_c1.html")
-    c3_report = find_report("_c3.html")
+    c1_report = find_report("_c1_devnet.html")
+    c3_report = find_report("_c3_devnet.html")
+    c4_report = find_report("_c4_mainnet.html")
     c1_url = PAGES_BASE + c1_report if c1_report else None
     c3_url = PAGES_BASE + c3_report if c3_report else None
+    c4_url = PAGES_BASE + c4_report if c4_report else None
 
     description = (
-        f"{fmt_cohort('Simple conditions', c1r, c1_url)}\n\n"
-        f"{fmt_cohort('Discord verification', c3r, c3_url)}"
+        f"**Testnet** (lynx \u00b7 base-sepolia)\n"
+        f"{fmt_cohort('Simple conditions', c1r, c1_url)}\n"
+        f"{fmt_cohort('Discord verification', c3r, c3_url)}\n\n"
+        f"**Mainnet** (base)\n"
+        f"{fmt_cohort('Discord verification', c4r, c4_url)}"
     )
 
     embed = {
@@ -103,7 +118,7 @@ def main():
                 "title": f"Daily Health Check \u2014 {timestamp}",
                 "description": description,
                 "color": color,
-                "footer": {"text": "lynx \u00b7 base-sepolia"},
+                "footer": {"text": "taco-perf"},
             }
         ]
     }

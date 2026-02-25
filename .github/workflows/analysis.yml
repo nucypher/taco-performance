@@ -66,19 +66,15 @@ jobs:
 
       - name: Run Analysis
         run: |
-          if [ "${{ inputs.condition }}" = "discord" ]; then
+          if [ "${{ inputs.condition }}" = "discord" ] && [ "${{ inputs.domain }}" = "mainnet" ]; then
+            CONFIG="configs/daily-cohort4.yml"
+          elif [ "${{ inputs.condition }}" = "discord" ]; then
             CONFIG="configs/daily-cohort3.yml"
-            COHORT=3
           else
             CONFIG="configs/daily-cohort1.yml"
-            COHORT=1
           fi
-          CHAIN=$( [ "${{ inputs.domain }}" = "mainnet" ] && echo 8453 || echo 84532 )
           npx tsx src/runner.ts \
             --config="$CONFIG" \
-            --domain=${{ inputs.domain }} \
-            --cohort="$COHORT" \
-            --chain="$CHAIN" \
             --mode=${{ inputs.mode }} \
             --rate=${{ inputs.rate }} \
             --duration=${{ inputs.duration }}

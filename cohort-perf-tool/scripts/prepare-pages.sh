@@ -44,14 +44,14 @@ parse_filename() {
     F_DATE="${day} ${months[$mi]} ${year}, ${hour}:${min}"
   else
     F_DATE="$base"
-    F_MODE="" ; F_RATE="" ; F_DURATION="" ; F_COHORT=""
+    F_MODE="" ; F_RATE="" ; F_DURATION="" ; F_COHORT="" ; F_NETWORK=""
     return
   fi
 
   # Metadata: everything after timestamp, separated by underscores
   local rest="${base:17}"
   rest="${rest#_}"  # strip leading underscore
-  F_MODE="" ; F_RATE="" ; F_DURATION="" ; F_COHORT=""
+  F_MODE="" ; F_RATE="" ; F_DURATION="" ; F_COHORT="" ; F_NETWORK=""
 
   if [ -z "$rest" ]; then
     return
@@ -72,7 +72,13 @@ parse_filename() {
       case "$cid" in
         1) F_COHORT="minimal" ;;
         3) F_COHORT="discord" ;;
+        4) F_COHORT="discord" ;;
         *) F_COHORT="cohort $cid" ;;
+      esac
+    elif [[ "$part" =~ ^(devnet|mainnet)$ ]]; then
+      case "$part" in
+        devnet)  F_NETWORK="testnet" ;;
+        mainnet) F_NETWORK="mainnet" ;;
       esac
     fi
   done
@@ -86,7 +92,7 @@ generate_rows() {
   local files
   files=$(ls "$dir/"*.html 2>/dev/null | xargs -I{} basename {} | sort -r || true)
   if [ -z "$files" ]; then
-    echo '<tr><td colspan="5" class="empty">No reports yet.</td></tr>'
+    echo '<tr><td colspan="6" class="empty">No reports yet.</td></tr>'
     return
   fi
   for f in $files; do
@@ -97,6 +103,7 @@ generate_rows() {
     echo "  <td>${F_RATE:--}</td>"
     echo "  <td>${F_DURATION:--}</td>"
     echo "  <td>${F_COHORT:--}</td>"
+    echo "  <td>${F_NETWORK:--}</td>"
     echo "</tr>"
   done
 }
@@ -133,8 +140,8 @@ cat > "$SITE_DIR/index.html" << 'HTMLEOF'
   }
   .section { margin-bottom: 3em; }
   table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-  th:nth-child(1) { width: 40%; }
-  th:nth-child(2), th:nth-child(3), th:nth-child(4), th:nth-child(5) { width: 15%; }
+  th:nth-child(1) { width: 35%; }
+  th:nth-child(2), th:nth-child(3), th:nth-child(4), th:nth-child(5), th:nth-child(6) { width: 13%; }
   thead th {
     text-align: left;
     color: #666;
@@ -202,7 +209,7 @@ HTMLEOF
 {
   echo '<div class="section">'
   echo '<h2>Daily Health Checks</h2>'
-  echo '<table><thead><tr><th>Date</th><th>Mode</th><th>Rate</th><th>Duration</th><th>Condition</th></tr></thead><tbody>'
+  echo '<table><thead><tr><th>Date</th><th>Mode</th><th>Rate</th><th>Duration</th><th>Condition</th><th>Network</th></tr></thead><tbody>'
   generate_rows "$SITE_DIR/daily" "daily/"
   echo '</tbody></table></div>'
 } >> "$SITE_DIR/index.html"
@@ -211,7 +218,7 @@ HTMLEOF
 {
   echo '<div class="section">'
   echo '<h2>Ad-hoc Analysis</h2>'
-  echo '<table><thead><tr><th>Date</th><th>Mode</th><th>Rate</th><th>Duration</th><th>Condition</th></tr></thead><tbody>'
+  echo '<table><thead><tr><th>Date</th><th>Mode</th><th>Rate</th><th>Duration</th><th>Condition</th><th>Network</th></tr></thead><tbody>'
   generate_rows "$SITE_DIR/analysis" "analysis/"
   echo '</tbody></table></div>'
 } >> "$SITE_DIR/index.html"

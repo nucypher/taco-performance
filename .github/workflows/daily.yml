@@ -36,15 +36,19 @@ jobs:
         run: |
           npx tsx src/runner.ts \
             --config=configs/daily-cohort1.yml \
-            --cohort=1 --chain=84532 \
             --json 2>&1 | tee cohort1-output.txt
 
       - name: Test Cohort 3
         run: |
           npx tsx src/runner.ts \
             --config=configs/daily-cohort3.yml \
-            --cohort=3 --chain=84532 \
             --json 2>&1 | tee cohort3-output.txt
+
+      - name: Test Cohort 4 (mainnet)
+        run: |
+          npx tsx src/runner.ts \
+            --config=configs/daily-cohort4.yml \
+            --json 2>&1 | tee cohort4-output.txt
 
       - name: Generate Reports
         run: |
@@ -73,4 +77,4 @@ jobs:
         if: always()
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: python3 scripts/post-discord.py cohort1-output.txt cohort3-output.txt
+        run: python3 scripts/post-discord.py cohort1-output.txt cohort3-output.txt cohort4-output.txt

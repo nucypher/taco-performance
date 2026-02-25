@@ -445,7 +445,8 @@ function buildReportFilename(data: TestData): string {
   const rate = data.config.rate + "rps";
   const dur = data.config.duration + "s";
   const cohort = data.config.cohortId !== undefined ? "c" + data.config.cohortId : "";
-  const parts = [ts, mode, rate, dur, cohort].filter(Boolean);
+  const domain = data.config.domain || "devnet";
+  const parts = [ts, mode, rate, dur, cohort, domain].filter(Boolean);
   return parts.join("_") + ".html";
 }
 
