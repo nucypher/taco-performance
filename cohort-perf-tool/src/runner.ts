@@ -43,10 +43,6 @@ import type {
 
 dotenv.config();
 
-const TOKEN_ADDRESSES: Record<string, Address> = {
-  USDC: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-};
-
 const ERC20_TRANSFER_ABI = [
   {
     name: "transfer",
@@ -59,13 +55,12 @@ const ERC20_TRANSFER_ABI = [
   },
 ] as const;
 
-const SIGNING_COORDINATOR_CHILD_ADDRESS =
-  "0xcc537b292d142dABe2424277596d8FFCC3e6A12D";
-
 const CHAINS: Record<number, any> = {
   84532: baseSepolia,
   8453: base,
 };
+
+let loadedConfig: Config;
 
 // Global State
 let signingCoordinatorProvider: ethers.providers.JsonRpcProvider;
@@ -273,7 +268,7 @@ async function initializeClients(): Promise<void> {
 
 async function createTacoSmartAccount(deploySalt: `0x${string}` = "0x") {
   const coordinator = new ethers.Contract(
-    SIGNING_COORDINATOR_CHILD_ADDRESS,
+    loadedConfig.contracts!.signingCoordinatorChild,
     ["function cohortMultisigs(uint32) view returns (address)"],
     signingChainProvider,
   );
@@ -337,6 +332,24 @@ async function signUserOpWithTaco(
 // Payload Preparation
 // =============================================================================
 
+async function buildStubUserOp(
+  smartAccount: any,
+  calls: Array<{ to: Address; value: bigint; data?: `0x${string}` }>,
+): Promise<Record<string, unknown>> {
+  const callData = await smartAccount.encodeCalls(calls);
+  return {
+    sender: smartAccount.address,
+    nonce: 0n,
+    callData,
+    callGasLimit: 100_000n,
+    verificationGasLimit: 500_000n,
+    preVerificationGas: 100_000n,
+    maxFeePerGas: 3_000_000_000n,
+    maxPriorityFeePerGas: 3_000_000_000n,
+    signature: "0x" as `0x${string}`,
+  };
+}
+
 function isBarePayload(payload: Payload): boolean {
   return !!payload.senderAddress;
 }
@@ -366,7 +379,7 @@ async function prepareBarePayload(payload: Payload): Promise<PreparedPayload> {
 
   const tokenDecimals = tokenType === "USDC" ? 6 : 18;
   const transferAmount = ethers.utils.parseUnits(amountStr, tokenDecimals);
-  const tokenAddress = TOKEN_ADDRESSES[tokenType];
+  const tokenAddress = (loadedConfig.contracts?.tokenAddresses as any)?.[tokenType];
   const calls: Array<{ to: Address; value: bigint; data?: `0x${string}` }> =
     tokenAddress
       ? [{
@@ -380,13 +393,7 @@ async function prepareBarePayload(payload: Payload): Promise<PreparedPayload> {
         }]
       : [{ to: recipientAddress, value: BigInt(transferAmount.toString()) }];
 
-  const userOp = await bundlerClient.prepareUserOperation({
-    account: smartAccount,
-    calls,
-    maxFeePerGas: 3_000_000_000n,
-    maxPriorityFeePerGas: 3_000_000_000n,
-    verificationGasLimit: BigInt(500_000),
-  });
+  const userOp = await buildStubUserOp(smartAccount, calls);
 
   return { payload, smartAccount, recipientAA: recipientAddress, calls, userOp };
 }
@@ -414,7 +421,7 @@ async function prepareDiscordPayload(payload: Payload): Promise<PreparedPayload>
   const amountStr = String(amountOpt ?? "0.0001");
   const tokenDecimals = tokenType === "USDC" ? 6 : 18;
   const transferAmount = ethers.utils.parseUnits(amountStr, tokenDecimals);
-  const tokenAddress = TOKEN_ADDRESSES[tokenType];
+  const tokenAddress = (loadedConfig.contracts?.tokenAddresses as any)?.[tokenType];
   const calls: Array<{ to: Address; value: bigint; data?: `0x${string}` }> =
     tokenAddress
       ? [{
@@ -435,13 +442,7 @@ async function prepareDiscordPayload(payload: Payload): Promise<PreparedPayload>
     payload: bodyString,
   };
 
-  const userOp = await bundlerClient.prepareUserOperation({
-    account: smartAccount,
-    calls,
-    maxFeePerGas: 3_000_000_000n,
-    maxPriorityFeePerGas: 3_000_000_000n,
-    verificationGasLimit: BigInt(500_000),
-  });
+  const userOp = await buildStubUserOp(smartAccount, calls);
 
   const signingContext = buildSigningContext(discordContext);
 
@@ -1003,6 +1004,8 @@ function loadConfig(cliOptions: CLIOptions): {
     process.exit(1);
   }
 
+  loadedConfig = config;
+
   const d = config.defaults || {};
   return {
     config,
@@ -1077,22 +1080,22 @@ async function main() {
     batchesPerBurst, cooldown, timeout, maxDuration, maxConsecutiveFailures, output,
   } = loadConfig(cliOptions);
 
-  // Set global state from CLI/config
+  // Set global state from CLI/config (CLI overrides config)
   REQUEST_TIMEOUT_SECONDS = timeout;
   VERBOSE = cliOptions.verbose === true;
 
-  if (cliOptions.domain === "mainnet") {
+  const resolvedDomain = cliOptions.domain || config.defaults?.domain || "devnet";
+  if (resolvedDomain === "mainnet") {
     TACO_DOMAIN = domains.MAINNET;
-    CHAIN_ID = 8453;
   }
-  if (cliOptions.cohortId !== undefined) COHORT_ID = cliOptions.cohortId;
-  if (cliOptions.chainId !== undefined) CHAIN_ID = cliOptions.chainId;
+  COHORT_ID = cliOptions.cohortId ?? config.defaults?.cohort ?? COHORT_ID;
+  CHAIN_ID = cliOptions.chainId ?? config.defaults?.chain ?? CHAIN_ID;
 
   if (VERBOSE) {
     console.log("[taco-perf] TACo Performance Test");
     console.log("[taco-perf] Config: " + cliOptions.config);
     console.log("[taco-perf] Mode: " + mode);
-    console.log("[taco-perf] Domain: " + (cliOptions.domain || "devnet") + " | Cohort: " + COHORT_ID + " | Chain: " + CHAIN_ID);
+    console.log("[taco-perf] Domain: " + resolvedDomain + " | Cohort: " + COHORT_ID + " | Chain: " + CHAIN_ID);
     console.log("[taco-perf] Timeout: " + timeout + "s");
   }
 
@@ -1154,7 +1157,7 @@ async function main() {
     config: {
       mode, rate, duration,
       rates, burstSizes, batchesPerBurst,
-      domain: cliOptions.domain || "devnet",
+      domain: resolvedDomain,
       cohortId: COHORT_ID,
       chainId: CHAIN_ID,
       maxDuration, maxConsecutiveFailures,
@@ -1171,7 +1174,7 @@ async function main() {
     const allResults = [...steadyResults, ...burstResults];
     const summary: JsonSummary = {
       timestamp: testData.timestamp,
-      domain: cliOptions.domain || "devnet",
+      domain: resolvedDomain,
       cohortId: COHORT_ID,
       chainId: CHAIN_ID,
       results: allResults.map((r) => ({
