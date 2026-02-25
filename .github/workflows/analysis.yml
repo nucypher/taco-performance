@@ -46,9 +46,12 @@ jobs:
   analysis:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    defaults:
+      run:
+        # Sets the default directory for all 'run' steps in this job
+        working-directory: ./cohort-perf-tool
     permissions:
       contents: write
-
     steps:
       - uses: actions/checkout@v4
 
@@ -56,6 +59,8 @@ jobs:
         with:
           node-version: 20
           cache: npm
+          # where to find the lockfile for caching
+          cache-dependency-path: cohort-perf-tool/package-lock.json
 
       - run: npm ci
 
@@ -85,7 +90,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: taco-perf-analysis-${{ github.run_number }}
-          path: results/
+          path: cohort-perf-tool/results/
           retention-days: 90
 
       - name: Prepare Pages
@@ -95,5 +100,5 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./_site
+          publish_dir: ./cohort-perf-tool/_site
           keep_files: false
