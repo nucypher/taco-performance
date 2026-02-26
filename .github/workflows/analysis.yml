@@ -37,6 +37,10 @@ on:
         required: true
         default: "60"
         type: string
+      porter_uris:
+        description: "Porter URIs (comma-separated, e.g. https://toronto.porter.nucypher.io/)"
+        required: false
+        type: string
 
 env:
   INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }}
@@ -73,11 +77,16 @@ jobs:
           else
             CONFIG="configs/daily-cohort1.yml"
           fi
+          PORTER_FLAG=""
+          if [ -n "${{ inputs.porter_uris }}" ]; then
+            PORTER_FLAG="--porter-uris=${{ inputs.porter_uris }}"
+          fi
           npx tsx src/runner.ts \
             --config="$CONFIG" \
             --mode=${{ inputs.mode }} \
             --rate=${{ inputs.rate }} \
-            --duration=${{ inputs.duration }}
+            --duration=${{ inputs.duration }} \
+            $PORTER_FLAG
 
       - name: Generate Report
         run: npx tsx src/report.ts --latest
