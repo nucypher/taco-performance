@@ -526,7 +526,27 @@ async function executeSigningRequestInner(
     };
   } catch (error) {
     const endTime = Date.now();
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    let errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Extract additional detail from axios-style errors (e.g. 503 responses)
+    const resp = (error as any)?.response;
+    if (resp) {
+      const parts: string[] = [errorMessage];
+      if (resp.status) parts.push("status=" + resp.status);
+      if (resp.data) {
+        const body = typeof resp.data === "string" ? resp.data : JSON.stringify(resp.data);
+        if (body.length <= 300) parts.push("body=" + body);
+        else parts.push("body=" + body.slice(0, 300) + "...");
+      }
+      errorMessage = parts.join(" | ");
+    }
+
+    // Extract detail from errors with a cause chain
+    const cause = (error as any)?.cause;
+    if (cause && cause.message && !errorMessage.includes(cause.message)) {
+      errorMessage += " | cause: " + cause.message;
+    }
+
     return {
       index: 0, startTime, endTime,
       duration: endTime - startTime,
@@ -853,7 +873,7 @@ function printResults(results: RequestResult[], mode: string, rate: number, labe
     console.log();
     console.log("ERRORS");
     for (const { message, count } of errorsWithCounts.slice(0, 5)) {
-      const shortErr = message.length > 60 ? message.slice(0, 60) + "..." : message;
+      const shortErr = message.length > 200 ? message.slice(0, 200) + "..." : message;
       console.log("    [" + count + "x] " + shortErr);
     }
     if (errorsWithCounts.length > 5) {
