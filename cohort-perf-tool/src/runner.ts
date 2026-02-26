@@ -74,6 +74,7 @@ let TACO_DOMAIN: Domain = domains.DEVNET;
 let COHORT_ID = 3;
 let CHAIN_ID = 84532;
 let AA_VERSION = "mdt";
+let PORTER_URIS: string[] | undefined;
 
 // =============================================================================
 // ANSI Terminal Display
@@ -324,7 +325,7 @@ async function signUserOpWithTaco(
   provider: ethers.providers.JsonRpcProvider,
   signingContext?: InstanceType<typeof conditions.context.ConditionContext>,
 ) {
-  return await signUserOp(provider, TACO_DOMAIN, COHORT_ID, CHAIN_ID, userOp as UserOperationToSign, AA_VERSION, signingContext);
+  return await signUserOp(provider, TACO_DOMAIN, COHORT_ID, CHAIN_ID, userOp as UserOperationToSign, AA_VERSION, signingContext, PORTER_URIS);
 }
 
 
@@ -968,6 +969,7 @@ function parseArgs(args: string[]): CLIOptions {
       domain:        { type: "string" },
       cohort:        { type: "string" },
       chain:         { type: "string" },
+      "porter-uris": { type: "string" },
     },
     strict: false,
   });
@@ -989,6 +991,7 @@ function parseArgs(args: string[]): CLIOptions {
     domain: values.domain as string | undefined,
     cohortId: values.cohort ? parseInt(values.cohort as string, 10) : undefined,
     chainId: values.chain ? parseInt(values.chain as string, 10) : undefined,
+    porterUris: values["porter-uris"] ? (values["porter-uris"] as string).split(",").map((u) => u.trim()) : undefined,
   };
 }
 
@@ -1110,12 +1113,14 @@ async function main() {
   }
   COHORT_ID = cliOptions.cohortId ?? config.defaults?.cohort ?? COHORT_ID;
   CHAIN_ID = cliOptions.chainId ?? config.defaults?.chain ?? CHAIN_ID;
+  PORTER_URIS = cliOptions.porterUris;
 
   if (VERBOSE) {
     console.log("[taco-perf] TACo Performance Test");
     console.log("[taco-perf] Config: " + cliOptions.config);
     console.log("[taco-perf] Mode: " + mode);
     console.log("[taco-perf] Domain: " + resolvedDomain + " | Cohort: " + COHORT_ID + " | Chain: " + CHAIN_ID);
+    if (PORTER_URIS) console.log("[taco-perf] Porter URIs: " + PORTER_URIS.join(", "));
     console.log("[taco-perf] Timeout: " + timeout + "s");
   }
 

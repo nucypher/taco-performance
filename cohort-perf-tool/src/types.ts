@@ -65,6 +65,7 @@ export interface CLIOptions {
   domain?: string;
   cohortId?: number;
   chainId?: number;
+  porterUris?: string[];
 }
 
 // =============================================================================
