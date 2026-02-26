@@ -11,6 +11,14 @@ defaults:
   rate: 2
   cooldown: 30
   timeout: 120
+  domain: devnet
+  cohort: 3
+  chain: 84532
+
+contracts:
+  signingCoordinatorChild: "0xcc537b292d142dABe2424277596d8FFCC3e6A12D"
+  tokenAddresses:
+    USDC: "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
 
 payloads:
   - name: "bare-transfer"

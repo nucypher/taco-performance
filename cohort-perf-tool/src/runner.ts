@@ -43,10 +43,6 @@ import type {
 
 dotenv.config();
 
-const TOKEN_ADDRESSES: Record<string, Address> = {
-  USDC: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-};
-
 const ERC20_TRANSFER_ABI = [
   {
     name: "transfer",
@@ -59,13 +55,12 @@ const ERC20_TRANSFER_ABI = [
   },
 ] as const;
 
-const SIGNING_COORDINATOR_CHILD_ADDRESS =
-  "0xcc537b292d142dABe2424277596d8FFCC3e6A12D";
-
 const CHAINS: Record<number, any> = {
   84532: baseSepolia,
   8453: base,
 };
+
+let loadedConfig: Config;
 
 // Global State
 let signingCoordinatorProvider: ethers.providers.JsonRpcProvider;
@@ -79,6 +74,7 @@ let TACO_DOMAIN: Domain = domains.DEVNET;
 let COHORT_ID = 3;
 let CHAIN_ID = 84532;
 let AA_VERSION = "mdt";
+let PORTER_URIS: string[] | undefined;
 
 // =============================================================================
 // ANSI Terminal Display
@@ -273,7 +269,7 @@ async function initializeClients(): Promise<void> {
 
 async function createTacoSmartAccount(deploySalt: `0x${string}` = "0x") {
   const coordinator = new ethers.Contract(
-    SIGNING_COORDINATOR_CHILD_ADDRESS,
+    loadedConfig.contracts!.signingCoordinatorChild,
     ["function cohortMultisigs(uint32) view returns (address)"],
     signingChainProvider,
   );
@@ -329,13 +325,31 @@ async function signUserOpWithTaco(
   provider: ethers.providers.JsonRpcProvider,
   signingContext?: InstanceType<typeof conditions.context.ConditionContext>,
 ) {
-  return await signUserOp(provider, TACO_DOMAIN, COHORT_ID, CHAIN_ID, userOp as UserOperationToSign, AA_VERSION, signingContext);
+  return await signUserOp(provider, TACO_DOMAIN, COHORT_ID, CHAIN_ID, userOp as UserOperationToSign, AA_VERSION, signingContext, PORTER_URIS);
 }
 
 
 // =============================================================================
 // Payload Preparation
 // =============================================================================
+
+async function buildStubUserOp(
+  smartAccount: any,
+  calls: Array<{ to: Address; value: bigint; data?: `0x${string}` }>,
+): Promise<Record<string, unknown>> {
+  const callData = await smartAccount.encodeCalls(calls);
+  return {
+    sender: smartAccount.address,
+    nonce: 0n,
+    callData,
+    callGasLimit: 100_000n,
+    verificationGasLimit: 500_000n,
+    preVerificationGas: 100_000n,
+    maxFeePerGas: 3_000_000_000n,
+    maxPriorityFeePerGas: 3_000_000_000n,
+    signature: "0x" as `0x${string}`,
+  };
+}
 
 function isBarePayload(payload: Payload): boolean {
   return !!payload.senderAddress;
@@ -366,7 +380,7 @@ async function prepareBarePayload(payload: Payload): Promise<PreparedPayload> {
 
   const tokenDecimals = tokenType === "USDC" ? 6 : 18;
   const transferAmount = ethers.utils.parseUnits(amountStr, tokenDecimals);
-  const tokenAddress = TOKEN_ADDRESSES[tokenType];
+  const tokenAddress = (loadedConfig.contracts?.tokenAddresses as any)?.[tokenType];
   const calls: Array<{ to: Address; value: bigint; data?: `0x${string}` }> =
     tokenAddress
       ? [{
@@ -380,13 +394,7 @@ async function prepareBarePayload(payload: Payload): Promise<PreparedPayload> {
         }]
       : [{ to: recipientAddress, value: BigInt(transferAmount.toString()) }];
 
-  const userOp = await bundlerClient.prepareUserOperation({
-    account: smartAccount,
-    calls,
-    maxFeePerGas: 3_000_000_000n,
-    maxPriorityFeePerGas: 3_000_000_000n,
-    verificationGasLimit: BigInt(500_000),
-  });
+  const userOp = await buildStubUserOp(smartAccount, calls);
 
   return { payload, smartAccount, recipientAA: recipientAddress, calls, userOp };
 }
@@ -414,7 +422,7 @@ async function prepareDiscordPayload(payload: Payload): Promise<PreparedPayload>
   const amountStr = String(amountOpt ?? "0.0001");
   const tokenDecimals = tokenType === "USDC" ? 6 : 18;
   const transferAmount = ethers.utils.parseUnits(amountStr, tokenDecimals);
-  const tokenAddress = TOKEN_ADDRESSES[tokenType];
+  const tokenAddress = (loadedConfig.contracts?.tokenAddresses as any)?.[tokenType];
   const calls: Array<{ to: Address; value: bigint; data?: `0x${string}` }> =
     tokenAddress
       ? [{
@@ -435,13 +443,7 @@ async function prepareDiscordPayload(payload: Payload): Promise<PreparedPayload>
     payload: bodyString,
   };
 
-  const userOp = await bundlerClient.prepareUserOperation({
-    account: smartAccount,
-    calls,
-    maxFeePerGas: 3_000_000_000n,
-    maxPriorityFeePerGas: 3_000_000_000n,
-    verificationGasLimit: BigInt(500_000),
-  });
+  const userOp = await buildStubUserOp(smartAccount, calls);
 
   const signingContext = buildSigningContext(discordContext);
 
@@ -525,7 +527,27 @@ async function executeSigningRequestInner(
     };
   } catch (error) {
     const endTime = Date.now();
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    let errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Extract additional detail from axios-style errors (e.g. 503 responses)
+    const resp = (error as any)?.response;
+    if (resp) {
+      const parts: string[] = [errorMessage];
+      if (resp.status) parts.push("status=" + resp.status);
+      if (resp.data) {
+        const body = typeof resp.data === "string" ? resp.data : JSON.stringify(resp.data);
+        if (body.length <= 300) parts.push("body=" + body);
+        else parts.push("body=" + body.slice(0, 300) + "...");
+      }
+      errorMessage = parts.join(" | ");
+    }
+
+    // Extract detail from errors with a cause chain
+    const cause = (error as any)?.cause;
+    if (cause && cause.message && !errorMessage.includes(cause.message)) {
+      errorMessage += " | cause: " + cause.message;
+    }
+
     return {
       index: 0, startTime, endTime,
       duration: endTime - startTime,
@@ -852,7 +874,7 @@ function printResults(results: RequestResult[], mode: string, rate: number, labe
     console.log();
     console.log("ERRORS");
     for (const { message, count } of errorsWithCounts.slice(0, 5)) {
-      const shortErr = message.length > 60 ? message.slice(0, 60) + "..." : message;
+      const shortErr = message.length > 200 ? message.slice(0, 200) + "..." : message;
       console.log("    [" + count + "x] " + shortErr);
     }
     if (errorsWithCounts.length > 5) {
@@ -947,6 +969,7 @@ function parseArgs(args: string[]): CLIOptions {
       domain:        { type: "string" },
       cohort:        { type: "string" },
       chain:         { type: "string" },
+      "porter-uris": { type: "string" },
     },
     strict: false,
   });
@@ -968,6 +991,7 @@ function parseArgs(args: string[]): CLIOptions {
     domain: values.domain as string | undefined,
     cohortId: values.cohort ? parseInt(values.cohort as string, 10) : undefined,
     chainId: values.chain ? parseInt(values.chain as string, 10) : undefined,
+    porterUris: values["porter-uris"] ? (values["porter-uris"] as string).split(",").map((u) => u.trim()) : undefined,
   };
 }
 
@@ -1002,6 +1026,8 @@ function loadConfig(cliOptions: CLIOptions): {
     console.error("Error: Config must contain at least one payload");
     process.exit(1);
   }
+
+  loadedConfig = config;
 
   const d = config.defaults || {};
   return {
@@ -1077,22 +1103,24 @@ async function main() {
     batchesPerBurst, cooldown, timeout, maxDuration, maxConsecutiveFailures, output,
   } = loadConfig(cliOptions);
 
-  // Set global state from CLI/config
+  // Set global state from CLI/config (CLI overrides config)
   REQUEST_TIMEOUT_SECONDS = timeout;
   VERBOSE = cliOptions.verbose === true;
 
-  if (cliOptions.domain === "mainnet") {
+  const resolvedDomain = cliOptions.domain || config.defaults?.domain || "devnet";
+  if (resolvedDomain === "mainnet") {
     TACO_DOMAIN = domains.MAINNET;
-    CHAIN_ID = 8453;
   }
-  if (cliOptions.cohortId !== undefined) COHORT_ID = cliOptions.cohortId;
-  if (cliOptions.chainId !== undefined) CHAIN_ID = cliOptions.chainId;
+  COHORT_ID = cliOptions.cohortId ?? config.defaults?.cohort ?? COHORT_ID;
+  CHAIN_ID = cliOptions.chainId ?? config.defaults?.chain ?? CHAIN_ID;
+  PORTER_URIS = cliOptions.porterUris;
 
   if (VERBOSE) {
     console.log("[taco-perf] TACo Performance Test");
     console.log("[taco-perf] Config: " + cliOptions.config);
     console.log("[taco-perf] Mode: " + mode);
-    console.log("[taco-perf] Domain: " + (cliOptions.domain || "devnet") + " | Cohort: " + COHORT_ID + " | Chain: " + CHAIN_ID);
+    console.log("[taco-perf] Domain: " + resolvedDomain + " | Cohort: " + COHORT_ID + " | Chain: " + CHAIN_ID);
+    if (PORTER_URIS) console.log("[taco-perf] Porter URIs: " + PORTER_URIS.join(", "));
     console.log("[taco-perf] Timeout: " + timeout + "s");
   }
 
@@ -1154,7 +1182,7 @@ async function main() {
     config: {
       mode, rate, duration,
       rates, burstSizes, batchesPerBurst,
-      domain: cliOptions.domain || "devnet",
+      domain: resolvedDomain,
       cohortId: COHORT_ID,
       chainId: CHAIN_ID,
       maxDuration, maxConsecutiveFailures,
@@ -1171,7 +1199,7 @@ async function main() {
     const allResults = [...steadyResults, ...burstResults];
     const summary: JsonSummary = {
       timestamp: testData.timestamp,
-      domain: cliOptions.domain || "devnet",
+      domain: resolvedDomain,
       cohortId: COHORT_ID,
       chainId: CHAIN_ID,
       results: allResults.map((r) => ({

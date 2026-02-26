@@ -31,10 +31,17 @@ export interface ConfigDefaults {
   timeout?: number;
   maxDuration?: number;
   maxConsecutiveFailures?: number;
+  domain?: string;
+  cohort?: number;
+  chain?: number;
 }
 
 export interface Config {
   defaults?: ConfigDefaults;
+  contracts?: {
+    signingCoordinatorChild: string;
+    tokenAddresses?: Record<string, string>;
+  };
   payloads: Payload[];
 }
 
@@ -58,6 +65,7 @@ export interface CLIOptions {
   domain?: string;
   cohortId?: number;
   chainId?: number;
+  porterUris?: string[];
 }
 
 // =============================================================================

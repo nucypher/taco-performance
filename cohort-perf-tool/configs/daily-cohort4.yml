@@ -1,4 +1,4 @@
-# TACo Daily Health Check - Cohort 3
+# TACo Daily Health Check - Cohort 4 (mainnet)
 # Discord signature verification conditions
 
 defaults:
@@ -7,14 +7,14 @@ defaults:
   duration: 30
   timeout: 120
   cooldown: 10
-  domain: devnet
-  cohort: 3
-  chain: 84532
+  domain: mainnet
+  cohort: 4
+  chain: 8453
 
 contracts:
-  signingCoordinatorChild: "0xcc537b292d142dABe2424277596d8FFCC3e6A12D"
+  signingCoordinatorChild: "0xdecd7F2056fb1653300fc2Ba1CbFe6203E731Ad3"
   tokenAddresses:
-    USDC: "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
+    USDC: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
 
 payloads:
   - name: "discord-tip"
