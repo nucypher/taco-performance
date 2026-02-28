@@ -134,7 +134,7 @@ def send_porter_request(
     "--cohort-id",
     help="Cohort to use for the signing requests.",
     type=click.Choice(list(SIGNING_REQUESTS.keys())),
-    default=3,
+    required=True,
 )
 @click.option(
     "--domain",
@@ -149,6 +149,16 @@ def signing_stress_test(
     cohort_id: int,
     domain: str,
 ) -> None:
+
+    if cohort_id == 4 and domain != "mainnet":
+        raise click.UsageError(
+            "Cohort 4 signing requests are only valid for the mainnet domain."
+        )
+    if cohort_id != 4 and domain != "lynx":
+        raise click.UsageError(
+            f"Cohort {cohort_id} signing requests are only valid for the lynx domain."
+        )
+
     failures = AtomicCounter()
     stats_collector = StatsCollector()
     start_time = time.perf_counter()
