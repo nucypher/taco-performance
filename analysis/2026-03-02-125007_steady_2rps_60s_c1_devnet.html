@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TACo Performance Report</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+:root { --bg: #000000; --card-bg: #111111; --text: #ffffff; --text-muted: #909090; --accent: #96FF5E; --success: #96FF5E; --warning: #ffa726; --error: #ef5350; --border: #333333; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem; }
+.container { max-width: 1400px; margin: 0 auto; }
+.header { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
+h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: 0.05em; }
+h2 { font-size: 1.25rem; margin: 2rem 0 1rem; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+h3 { font-size: 1rem; margin: 0 0 0.75rem; }
+.timestamp { color: var(--text-muted); font-size: 0.85rem; }
+.config-label { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 2rem; }
+.overall-badge { display: inline-block; padding: 0.25rem 1rem; border-radius: 3px; font-weight: bold; font-size: 1.5rem; }
+.cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.result-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; padding: 1.25rem; }
+.result-card h3 { color: var(--accent); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
+.stat-row { display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid var(--border); }
+.stat-row:last-child { border-bottom: none; }
+.stat-label { color: var(--text-muted); font-size: 0.85rem; }
+.stat-value { font-weight: 600; font-size: 0.85rem; }
+.chart-container { background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; padding: 1rem; margin-bottom: 1.5rem; }
+.chart-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 1.5rem; }
+@media (max-width: 1100px) { .chart-row { grid-template-columns: 1fr; } }
+.error-section { background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; padding: 1.25rem; margin-bottom: 1rem; }
+.error-section h3 { color: var(--text-muted); font-size: 0.85rem; }
+.error-type { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+.error-type:last-child { border-bottom: none; }
+.error-count { background: var(--error); color: white; padding: 0.15rem 0.5rem; border-radius: 2px; font-size: 0.8rem; font-weight: bold; }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header"><h1>TACo Performance Report</h1><span class="overall-badge" style="color:#ef5350">0.0%</span></div>
+<div class="timestamp">Mon, Mar 2, 2026, 12:50 PM UTC</div>
+<div class="config-label">devnet | Cohort 1 | Chain 84532</div>
+<div class="cards-grid"><div class="result-card"><h3>steady @ 2 req/s</h3><div class="stat-row"><span class="stat-label">Requests</span><span class="stat-value">0 / 120</span></div><div class="stat-row"><span class="stat-label">Success Rate</span><span class="stat-value" style="color:#ef5350">0.0%</span></div><div class="stat-row"><span class="stat-label">Duration</span><span class="stat-value">60.4s</span></div><div class="stat-row"><span class="stat-label">p50</span><span class="stat-value">893ms</span></div><div class="stat-row"><span class="stat-label">p95</span><span class="stat-value">977ms</span></div><div class="stat-row"><span class="stat-label">p99</span><span class="stat-value">1.05s</span></div><div class="stat-row"><span class="stat-label">TACo p50</span><span class="stat-value">N/A</span></div><div class="stat-row"><span class="stat-label">TACo p95</span><span class="stat-value">N/A</span></div></div></div>
+<h2>Request Timeline</h2><div class="chart-container"><div id="timelineChart" style="height:400px"></div></div>
+<div class="chart-row"><div class="chart-container"><div id="latencyHistChart" style="height:350px"></div></div><div class="chart-container"><div id="inFlightChart" style="height:350px"></div></div></div>
+<div class="chart-container"><div id="inFlightVsLatencyChart" style="height:350px"></div></div>
+<h2>Error Details</h2><div class="error-section"><h3>Steady @ 2 req/s <span class="error-total">120 failed</span></h3><div class="error-entry"><div class="error-header" onclick="toggleError('err-0')" style="cursor:pointer"><span class="error-count">120x</span><span class="error-summary"><span class="expand-icon" id="icon-err-0">+</span> [taco-signing] Request failed with status code 503 | status=503 | body=&lt;html&gt;&lt;body&gt;&lt;h1&gt;503 Service Unavailable&lt;/h1&gt;No se...</span></div><pre class="error-full" id="err-0" style="display:none">[taco-signing] Request failed with status code 503 | status=503 | body=&lt;html&gt;&lt;body&gt;&lt;h1&gt;503 Service Unavailable&lt;/h1&gt;No server is available to handle this request.&lt;/body&gt;&lt;/html&gt;</pre></div></div>
+</div>
+<script>
+function toggleError(id) {
+  var el = document.getElementById(id);
+  var icon = document.getElementById('icon-' + id);
+  if (el.style.display === 'none') { el.style.display = 'block'; icon.textContent = '-'; }
+  else { el.style.display = 'none'; icon.textContent = '+'; }
+}
+const chartData = {"timeline":{"success":{"x":[],"y":[],"text":[]},"fail":{"x":[1.13,1.437,2.055,2.376,2.925,3.477,3.896,4.438,4.972,5.369,5.874,6.396,6.857,7.424,7.919,8.439,8.873,9.403,9.886,10.352,11.007,11.412,11.85,12.444,12.86,13.371,13.897,14.36,14.934,15.427,15.898,16.391,16.912,17.345,17.938,18.387,18.877,19.368,20.007,20.413,20.851,21.449,21.935,22.374,22.925,23.411,23.86,24.412,24.868,25.358,25.885,26.388,26.893,27.342,27.853,28.351,28.938,29.434,29.912,30.375,30.923,31.439,31.937,32.358,32.871,33.502,33.913,34.389,34.845,35.382,35.94,36.351,36.972,37.402,37.874,38.357,38.92,39.37,39.862,40.349,40.933,41.414,41.845,42.385,42.916,43.381,43.853,44.436,44.933,45.362,46.002,46.422,46.861,47.368,47.851,48.415,48.89,49.353,49.866,50.386,50.87,51.437,51.912,52.437,52.941,53.419,53.853,54.387,54.863,55.365,55.875,56.352,56.968,57.415,57.941,58.409,58.884,59.444,59.948,60.391],"y":[1.13,0.935,1.054,0.876,0.925,0.977,0.895,0.938,0.972,0.869,0.873,0.896,0.857,0.924,0.919,0.939,0.873,0.903,0.886,0.852,1.007,0.912,0.849,0.944,0.86,0.871,0.896,0.859,0.933,0.927,0.898,0.891,0.912,0.844,0.938,0.887,0.877,0.868,1.007,0.913,0.851,0.949,0.935,0.874,0.925,0.911,0.86,0.912,0.868,0.858,0.885,0.889,0.893,0.842,0.853,0.851,0.938,0.935,0.912,0.875,0.923,0.94,0.937,0.858,0.871,1.003,0.913,0.888,0.844,0.881,0.94,0.852,0.972,0.903,0.874,0.857,0.92,0.87,0.862,0.85,0.934,0.913,0.844,0.884,0.916,0.881,0.853,0.937,0.934,0.862,1.002,0.921,0.86,0.868,0.851,0.915,0.891,0.853,0.865,0.887,0.87,0.937,0.912,0.937,0.942,0.919,0.852,0.887,0.863,0.864,0.876,0.852,0.968,0.915,0.94,0.909,0.884,0.944,0.948,0.89],"text":["#0<br><br><br>.</body></html>","#1<br><br><br>.</body></html>","#2<br><br><br>.</body></html>","#3<br><br><br>.</body></html>","#4<br><br><br>.</body></html>","#5<br><br><br>.</body></html>","#6<br><br><br>.</body></html>","#7<br><br><br>.</body></html>","#8<br><br><br>.</body></html>","#9<br><br><br>.</body></html>","#10<br><br><br>.</body></html>","#11<br><br><br>.</body></html>","#12<br><br><br>.</body></html>","#13<br><br><br>.</body></html>","#14<br><br><br>.</body></html>","#15<br><br><br>.</body></html>","#16<br><br><br>.</body></html>","#17<br><br><br>.</body></html>","#18<br><br><br>.</body></html>","#19<br><br><br>.</body></html>","#20<br><br><br>.</body></html>","#21<br><br><br>.</body></html>","#22<br><br><br>.</body></html>","#23<br><br><br>.</body></html>","#24<br><br><br>.</body></html>","#25<br><br><br>.</body></html>","#26<br><br><br>.</body></html>","#27<br><br><br>.</body></html>","#28<br><br><br>.</body></html>","#29<br><br><br>.</body></html>","#30<br><br><br>.</body></html>","#31<br><br><br>.</body></html>","#32<br><br><br>.</body></html>","#33<br><br><br>.</body></html>","#34<br><br><br>.</body></html>","#35<br><br><br>.</body></html>","#36<br><br><br>.</body></html>","#37<br><br><br>.</body></html>","#38<br><br><br>.</body></html>","#39<br><br><br>.</body></html>","#40<br><br><br>.</body></html>","#41<br><br><br>.</body></html>","#42<br><br><br>.</body></html>","#43<br><br><br>.</body></html>","#44<br><br><br>.</body></html>","#45<br><br><br>.</body></html>","#46<br><br><br>.</body></html>","#47<br><br><br>.</body></html>","#48<br><br><br>.</body></html>","#49<br><br><br>.</body></html>","#50<br><br><br>.</body></html>","#51<br><br><br>.</body></html>","#52<br><br><br>.</body></html>","#53<br><br><br>.</body></html>","#54<br><br><br>.</body></html>","#55<br><br><br>.</body></html>","#56<br><br><br>.</body></html>","#57<br><br><br>.</body></html>","#58<br><br><br>.</body></html>","#59<br><br><br>.</body></html>","#60<br><br><br>.</body></html>","#61<br><br><br>.</body></html>","#62<br><br><br>.</body></html>","#63<br><br><br>.</body></html>","#64<br><br><br>.</body></html>","#65<br><br><br>.</body></html>","#66<br><br><br>.</body></html>","#67<br><br><br>.</body></html>","#68<br><br><br>.</body></html>","#69<br><br><br>.</body></html>","#70<br><br><br>.</body></html>","#71<br><br><br>.</body></html>","#72<br><br><br>.</body></html>","#73<br><br><br>.</body></html>","#74<br><br><br>.</body></html>","#75<br><br><br>.</body></html>","#76<br><br><br>.</body></html>","#77<br><br><br>.</body></html>","#78<br><br><br>.</body></html>","#79<br><br><br>.</body></html>","#80<br><br><br>.</body></html>","#81<br><br><br>.</body></html>","#82<br><br><br>.</body></html>","#83<br><br><br>.</body></html>","#84<br><br><br>.</body></html>","#85<br><br><br>.</body></html>","#86<br><br><br>.</body></html>","#87<br><br><br>.</body></html>","#88<br><br><br>.</body></html>","#89<br><br><br>.</body></html>","#90<br><br><br>.</body></html>","#91<br><br><br>.</body></html>","#92<br><br><br>.</body></html>","#93<br><br><br>.</body></html>","#94<br><br><br>.</body></html>","#95<br><br><br>.</body></html>","#96<br><br><br>.</body></html>","#97<br><br><br>.</body></html>","#98<br><br><br>.</body></html>","#99<br><br><br>.</body></html>","#100<br><br><br>.</body></html>","#101<br><br><br>.</body></html>","#102<br><br><br>.</body></html>","#103<br><br><br>.</body></html>","#104<br><br><br>.</body></html>","#105<br><br><br>.</body></html>","#106<br><br><br>.</body></html>","#107<br><br><br>.</body></html>","#108<br><br><br>.</body></html>","#109<br><br><br>.</body></html>","#110<br><br><br>.</body></html>","#111<br><br><br>.</body></html>","#112<br><br><br>.</body></html>","#113<br><br><br>.</body></html>","#114<br><br><br>.</body></html>","#115<br><br><br>.</body></html>","#116<br><br><br>.</body></html>","#117<br><br><br>.</body></html>","#118<br><br><br>.</body></html>","#119<br><br><br>.</body></html>"]},"inFlight":{"x":[],"y":[]}},"timelineInFlight":{"x":[1.13,1.437,2.055,2.376,2.925,3.477,3.896,4.438,4.972,5.369,5.874,6.396,6.857,7.424,7.919,8.439,8.873,9.403,9.886,10.352,11.007,11.412,11.85,12.444,12.86,13.371,13.897,14.36,14.934,15.427,15.898,16.391,16.912,17.345,17.938,18.387,18.877,19.368,20.007,20.413,20.851,21.449,21.935,22.374,22.925,23.411,23.86,24.412,24.868,25.358,25.885,26.388,26.893,27.342,27.853,28.351,28.938,29.434,29.912,30.375,30.923,31.439,31.937,32.358,32.871,33.502,33.913,34.389,34.845,35.382,35.94,36.351,36.972,37.402,37.874,38.357,38.92,39.37,39.862,40.349,40.933,41.414,41.845,42.385,42.916,43.381,43.853,44.436,44.933,45.362,46.002,46.422,46.861,47.368,47.851,48.415,48.89,49.353,49.866,50.386,50.87,51.437,51.912,52.437,52.941,53.419,53.853,54.387,54.863,55.365,55.875,56.352,56.968,57.415,57.941,58.409,58.884,59.444,59.948,60.391],"y":[2,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0]},"latencyHist":{"success":[],"fail":[1.13,0.935,1.054,0.876,0.925,0.977,0.895,0.938,0.972,0.869,0.873,0.896,0.857,0.924,0.919,0.939,0.873,0.903,0.886,0.852,1.007,0.912,0.849,0.944,0.86,0.871,0.896,0.859,0.933,0.927,0.898,0.891,0.912,0.844,0.938,0.887,0.877,0.868,1.007,0.913,0.851,0.949,0.935,0.874,0.925,0.911,0.86,0.912,0.868,0.858,0.885,0.889,0.893,0.842,0.853,0.851,0.938,0.935,0.912,0.875,0.923,0.94,0.937,0.858,0.871,1.003,0.913,0.888,0.844,0.881,0.94,0.852,0.972,0.903,0.874,0.857,0.92,0.87,0.862,0.85,0.934,0.913,0.844,0.884,0.916,0.881,0.853,0.937,0.934,0.862,1.002,0.921,0.86,0.868,0.851,0.915,0.891,0.853,0.865,0.887,0.87,0.937,0.912,0.937,0.942,0.919,0.852,0.887,0.863,0.864,0.876,0.852,0.968,0.915,0.94,0.909,0.884,0.944,0.948,0.89]},"inFlightVsLatency":{"x":[2,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],"y":[1.13,0.935,1.054,0.876,0.925,0.977,0.895,0.938,0.972,0.869,0.873,0.896,0.857,0.924,0.919,0.939,0.873,0.903,0.886,0.852,1.007,0.912,0.849,0.944,0.86,0.871,0.896,0.859,0.933,0.927,0.898,0.891,0.912,0.844,0.938,0.887,0.877,0.868,1.007,0.913,0.851,0.949,0.935,0.874,0.925,0.911,0.86,0.912,0.868,0.858,0.885,0.889,0.893,0.842,0.853,0.851,0.938,0.935,0.912,0.875,0.923,0.94,0.937,0.858,0.871,1.003,0.913,0.888,0.844,0.881,0.94,0.852,0.972,0.903,0.874,0.857,0.92,0.87,0.862,0.85,0.934,0.913,0.844,0.884,0.916,0.881,0.853,0.937,0.934,0.862,1.002,0.921,0.86,0.868,0.851,0.915,0.891,0.853,0.865,0.887,0.87,0.937,0.912,0.937,0.942,0.919,0.852,0.887,0.863,0.864,0.876,0.852,0.968,0.915,0.94,0.909,0.884,0.944,0.948,0.89],"success":[false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false]}};
+const plotlyLayout = {
+  paper_bgcolor: '#000000', plot_bgcolor: '#111111',
+  font: { family: 'SF Mono, Monaco, Inconsolata, monospace', color: '#ffffff', size: 11 },
+  xaxis: { gridcolor: '#222222', zerolinecolor: '#222222' },
+  yaxis: { gridcolor: '#222222', zerolinecolor: '#222222' },
+  margin: { l: 60, r: 30, t: 40, b: 50 }, hovermode: 'closest'
+};
+const plotlyConfig = { responsive: true, displayModeBar: true, modeBarButtonsToRemove: ['lasso2d', 'select2d'], displaylogo: false };
+if (chartData.timeline) {
+  var tl = chartData.timeline;
+  Plotly.newPlot('timelineChart', [
+    { x: tl.success.x, y: tl.success.y, text: tl.success.text, mode: 'markers', type: 'scatter', name: 'Success',
+      marker: { color: '#96FF5E', size: 6, opacity: 0.7 }, hovertemplate: '%{text}<br>%{y:.2f}s<extra>Success</extra>' },
+    { x: tl.fail.x, y: tl.fail.y, text: tl.fail.text, mode: 'markers', type: 'scatter', name: 'Failed',
+      marker: { color: '#ef5350', size: 8, symbol: 'x', opacity: 0.9 }, hovertemplate: '%{text}<br>%{y:.2f}s<extra>Failed</extra>' }
+  ], { ...plotlyLayout, title: 'Request Latency Over Time',
+    xaxis: { ...plotlyLayout.xaxis, title: 'Elapsed Time (s)' },
+    yaxis: { ...plotlyLayout.yaxis, title: 'Latency (s)' } }, plotlyConfig);
+}
+if (chartData.latencyHist) {
+  var h = chartData.latencyHist;
+  Plotly.newPlot('latencyHistChart', [
+    { x: h.success, type: 'histogram', name: 'Success', marker: { color: '#96FF5E' }, opacity: 0.7 },
+    { x: h.fail, type: 'histogram', name: 'Failed', marker: { color: '#ef5350' }, opacity: 0.7 }
+  ], { ...plotlyLayout, title: 'Latency Distribution', barmode: 'overlay',
+    xaxis: { ...plotlyLayout.xaxis, title: 'Latency (s)' },
+    yaxis: { ...plotlyLayout.yaxis, title: 'Count' } }, plotlyConfig);
+}
+if (chartData.timelineInFlight) {
+  var inf = chartData.timelineInFlight;
+  Plotly.newPlot('inFlightChart', [
+    { x: inf.x, y: inf.y, type: 'scatter', mode: 'lines', name: 'In-flight',
+      line: { color: '#ffa726', width: 1.5 }, fill: 'tozeroy', fillcolor: 'rgba(255,167,38,0.15)' }
+  ], { ...plotlyLayout, title: 'Concurrent In-flight Requests',
+    xaxis: { ...plotlyLayout.xaxis, title: 'Elapsed Time (s)' },
+    yaxis: { ...plotlyLayout.yaxis, title: 'In-flight' } }, plotlyConfig);
+}
+if (chartData.inFlightVsLatency) {
+  var iv = chartData.inFlightVsLatency;
+  var ivColors = iv.success.map(function(ok) { return ok ? '#96FF5E' : '#ef5350'; });
+  Plotly.newPlot('inFlightVsLatencyChart', [
+    { x: iv.x, y: iv.y, mode: 'markers', type: 'scatter',
+      marker: { color: ivColors, size: 5, opacity: 0.6 },
+      hovertemplate: 'In-flight: %{x}<br>Latency: %{y:.2f}s<extra></extra>' }
+  ], { ...plotlyLayout, title: 'In-flight vs Latency',
+    xaxis: { ...plotlyLayout.xaxis, title: 'Concurrent In-flight' },
+    yaxis: { ...plotlyLayout.yaxis, title: 'Latency (s)' } }, plotlyConfig);
+}
+if (chartData.steadySweep) {
+  var sw = chartData.steadySweep;
+  Plotly.newPlot('sweepSuccessChart', [
+    { x: sw.map(function(d){return d.label}), y: sw.map(function(d){return d.successPct}),
+      type: 'scatter', mode: 'lines+markers', name: 'Success Rate',
+      line: { color: '#96FF5E', width: 3 },
+      marker: { size: 10, color: sw.map(function(d){ return d.successPct >= 95 ? '#96FF5E' : d.successPct >= 80 ? '#ffa726' : '#ef5350'; }),
+        line: { color: '#000000', width: 2 } },
+      hovertemplate: '%{x}<br>%{y:.1f}%<extra></extra>' }
+  ], { ...plotlyLayout, title: 'Success Rate vs Request Rate',
+    xaxis: { ...plotlyLayout.xaxis, title: 'Request Rate' },
+    yaxis: { ...plotlyLayout.yaxis, title: 'Success Rate (%)', range: [0, 105] } }, plotlyConfig);
+}
+if (chartData.steadySweep) {
+  var sw2 = chartData.steadySweep;
+  Plotly.newPlot('sweepLatencyChart', [
+    { x: sw2.map(function(d){return d.label}), y: sw2.map(function(d){return d.p50}),
+      type: 'scatter', mode: 'lines+markers', name: 'p50', line: { color: '#96FF5E', width: 3 }, marker: { size: 8 } },
+    { x: sw2.map(function(d){return d.label}), y: sw2.map(function(d){return d.p95}),
+      type: 'scatter', mode: 'lines+markers', name: 'p95', line: { color: '#ffa726', width: 2, dash: 'dash' }, marker: { size: 6 } },
+    { x: sw2.map(function(d){return d.label}), y: sw2.map(function(d){return d.p99}),
+      type: 'scatter', mode: 'lines+markers', name: 'p99', line: { color: '#ef5350', width: 1, dash: 'dot' }, marker: { size: 5 } }
+  ], { ...plotlyLayout, title: 'Latency Percentiles vs Request Rate',
+    xaxis: { ...plotlyLayout.xaxis, title: 'Request Rate' },
+    yaxis: { ...plotlyLayout.yaxis, title: 'Latency (s)' } }, plotlyConfig);
+}
+if (chartData.nodeFailures) {
+  var nf = chartData.nodeFailures;
+  Plotly.newPlot('nodeFailureChart', [
+    { x: nf.labels, y: nf.timeouts, type: 'bar', name: 'Timeouts', marker: { color: '#ffa726' },
+      text: nf.fullLabels, hovertemplate: '%{text}<br>Timeouts: %{y}<extra></extra>' },
+    { x: nf.labels, y: nf.otherErrors, type: 'bar', name: 'Other Errors', marker: { color: '#ef5350' },
+      text: nf.fullLabels, hovertemplate: '%{text}<br>Errors: %{y}<extra></extra>' }
+  ], { ...plotlyLayout, title: 'Per-Node Error Attribution', barmode: 'stack',
+    xaxis: { ...plotlyLayout.xaxis, title: 'Node' },
+    yaxis: { ...plotlyLayout.yaxis, title: 'Error Count' } }, plotlyConfig);
+}
+</script>
+
+</body>
+</html>
