@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TACo Performance Report</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+:root { --bg: #000000; --card-bg: #111111; --text: #ffffff; --text-muted: #909090; --accent: #96FF5E; --success: #96FF5E; --warning: #ffa726; --error: #ef5350; --border: #333333; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem; }
+.container { max-width: 1400px; margin: 0 auto; }
+.header { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
+h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: 0.05em; }
+h2 { font-size: 1.25rem; margin: 2rem 0 1rem; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+h3 { font-size: 1rem; margin: 0 0 0.75rem; }
+.timestamp { color: var(--text-muted); font-size: 0.85rem; }
+.config-label { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 2rem; }
+.overall-badge { display: inline-block; padding: 0.25rem 1rem; border-radius: 3px; font-weight: bold; font-size: 1.5rem; }
+.cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.result-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; padding: 1.25rem; }
+.result-card h3 { color: var(--accent); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
+.stat-row { display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid var(--border); }
+.stat-row:last-child { border-bottom: none; }
+.stat-label { color: var(--text-muted); font-size: 0.85rem; }
+.stat-value { font-weight: 600; font-size: 0.85rem; }
+.chart-container { background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; padding: 1rem; margin-bottom: 1.5rem; }
+.chart-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 1.5rem; }
+@media (max-width: 1100px) { .chart-row { grid-template-columns: 1fr; } }
+.error-section { background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; padding: 1.25rem; margin-bottom: 1rem; }
+.error-section h3 { color: var(--text-muted); font-size: 0.85rem; }
+.error-type { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+.error-type:last-child { border-bottom: none; }
+.error-count { background: var(--error); color: white; padding: 0.15rem 0.5rem; border-radius: 2px; font-size: 0.8rem; font-weight: bold; }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header"><h1>TACo Performance Report</h1><span class="overall-badge" style="color:#ef5350">71.7%</span></div>
+<div class="timestamp">Sat, Mar 21, 2026, 08:07 AM UTC</div>
+<div class="config-label">devnet | Cohort 1 | Chain 84532</div>
+<div class="cards-grid"><div class="result-card"><h3>steady @ 2 req/s</h3><div class="stat-row"><span class="stat-label">Requests</span><span class="stat-value">43 / 60</span></div><div class="stat-row"><span class="stat-label">Success Rate</span><span class="stat-value" style="color:#ef5350">71.7%</span></div><div class="stat-row"><span class="stat-label">Duration</span><span class="stat-value">49.6s</span></div><div class="stat-row"><span class="stat-label">p50</span><span class="stat-value">18.31s</span></div><div class="stat-row"><span class="stat-label">p95</span><span class="stat-value">30.85s</span></div><div class="stat-row"><span class="stat-label">p99</span><span class="stat-value">31.03s</span></div><div class="stat-row"><span class="stat-label">TACo p50</span><span class="stat-value">16.47s</span></div><div class="stat-row"><span class="stat-label">TACo p95</span><span class="stat-value">29.70s</span></div></div></div>
+<h2>Request Timeline</h2><div class="chart-container"><div id="timelineChart" style="height:400px"></div></div>
+<div class="chart-row"><div class="chart-container"><div id="latencyHistChart" style="height:350px"></div></div><div class="chart-container"><div id="inFlightChart" style="height:350px"></div></div></div>
+<div class="chart-container"><div id="inFlightVsLatencyChart" style="height:350px"></div></div>
+<h2>Node Errors</h2><div class="chart-container"><div id="nodeFailureChart" style="height:350px"></div></div>
+<h2>Error Details</h2><div class="error-section"><h3>Steady @ 2 req/s <span class="error-total">17 failed</span></h3><div class="error-entry"><div class="error-header" onclick="toggleError('err-0')" style="cursor:pointer"><span class="error-count">7x</span><span class="error-summary"><span class="expand-icon" id="icon-err-0">+</span> [taco-signing] Threshold of signatures not met; TACo signing failed with errors: {"0xb15d5A4e2be34f4bE154A1b08a94Ab920Ff...</span></div><pre class="error-full" id="err-0" style="display:none">[taco-signing] Threshold of signatures not met; TACo signing failed with errors: {&quot;0xb15d5A4e2be34f4bE154A1b08a94Ab920FfD8A41&quot;:&quot;Node 0xb15d5A4e2be34f4bE154A1b08a94Ab920FfD8A41 did not respond before timeout (30s).&quot;,&quot;0x210eeAC07542F815ebB6FD6689637D8cA2689392&quot;:&quot;Node 0x210eeAC07542F815ebB6FD6689637D8cA2689392 did not respond before timeout (30s).&quot;}</pre></div><div class="error-entry"><div class="error-header" onclick="toggleError('err-1')" style="cursor:pointer"><span class="error-count">10x</span><span class="error-summary"><span class="expand-icon" id="icon-err-1">+</span> [taco-signing] Threshold of signatures not met; TACo signing failed with errors: {"0x210eeAC07542F815ebB6FD6689637D8cA26...</span></div><pre class="error-full" id="err-1" style="display:none">[taco-signing] Threshold of signatures not met; TACo signing failed with errors: {&quot;0x210eeAC07542F815ebB6FD6689637D8cA2689392&quot;:&quot;Node 0x210eeAC07542F815ebB6FD6689637D8cA2689392 did not respond before timeout (30s).&quot;,&quot;0xb15d5A4e2be34f4bE154A1b08a94Ab920FfD8A41&quot;:&quot;Node 0xb15d5A4e2be34f4bE154A1b08a94Ab920FfD8A41 did not respond before timeout (30s).&quot;}</pre></div></div>
+</div>
+<script>
+function toggleError(id) {
+  var el = document.getElementById(id);
+  var icon = document.getElementById('icon-' + id);
+  if (el.style.display === 'none') { el.style.display = 'block'; icon.textContent = '-'; }
+  else { el.style.display = 'none'; icon.textContent = '+'; }
+}
+const chartData = {"timeline":{"success":{"x":[12.771,16.853,17.714,19.78,21.679,24.228,26.313,27.331,28.896,29.043,30.07,32.968,32.969,33.537,35.276,35.473,36.112,36.32,37.521,37.81,38.336,38.791,39.13,39.464,39.794,40.012,40.129,40.462,40.798,41.132,41.453,41.788,41.798,42.339,42.356,42.715,42.724,43.103,43.121,43.568,44.203,49.101,50.144],"y":[12.271,7.853,10.713,7.279,7.679,16.228,11.313,26.331,12.896,27.043,23.57,16.468,17.469,24.037,23.776,17.474,18.612,17.32,17.021,18.307,27.335,17.291,16.63,16.464,16.294,20.012,16.13,15.462,15.296,15.133,14.954,14.788,17.297,14.339,14.855,14.214,13.724,13.603,21.121,30.067,29.702,30.601,29.143],"text":["#1","#18","#14","#25","#28","#16","#30","#2","#32","#4","#13","#33","#31","#19","#23","#36","#35","#38","#41","#39","#22","#43","#45","#46","#47","#40","#48","#50","#51","#52","#53","#54","#49","#56","#55","#57","#58","#59","#44","#27","#29","#37","#42"]},"fail":{"x":[30.854,32.532,33.23,33.881,34.412,34.745,35.25,35.727,36.243,36.778,38.235,39.236,40.732,41.26,42.745,43.3,47.307],"y":[30.854,31.032,30.73,30.882,30.912,30.746,30.75,30.727,30.742,30.777,30.736,30.735,30.732,30.759,30.746,30.3,30.307],"text":["#0<br><br><br><br><br>pond before timeout (30s).\"}","#3<br><br><br><br><br>pond before timeout (30s).\"}","#5<br><br><br><br><br>pond before timeout (30s).\"}","#6<br><br><br><br><br>pond before timeout (30s).\"}","#7<br><br><br><br><br>pond before timeout (30s).\"}","#8<br><br><br><br><br>pond before timeout (30s).\"}","#9<br><br><br><br><br>pond before timeout (30s).\"}","#10<br><br><br><br><br>pond before timeout (30s).\"}","#11<br><br><br><br><br>pond before timeout (30s).\"}","#12<br><br><br><br><br>pond before timeout (30s).\"}","#15<br><br><br><br><br>pond before timeout (30s).\"}","#17<br><br><br><br><br>pond before timeout (30s).\"}","#20<br><br><br><br><br>pond before timeout (30s).\"}","#21<br><br><br><br><br>pond before timeout (30s).\"}","#24<br><br><br><br><br>pond before timeout (30s).\"}","#26<br><br><br><br><br>pond before timeout (30s).\"}","#34<br><br><br><br><br>pond before timeout (30s).\"}"]},"inFlight":{"x":[],"y":[]}},"timelineInFlight":{"x":[12.771,16.853,17.714,19.78,21.679,24.228,26.313,27.331,28.896,29.043,30.07,30.854,32.532,32.968,32.969,33.23,33.537,33.881,34.412,34.745,35.25,35.276,35.473,35.727,36.112,36.243,36.32,36.778,37.521,37.81,38.235,38.336,38.791,39.13,39.236,39.464,39.794,40.012,40.129,40.462,40.732,40.798,41.132,41.26,41.453,41.788,41.798,42.339,42.356,42.715,42.724,42.745,43.103,43.121,43.3,43.568,44.203,47.307,49.101,50.144],"y":[25,32,33,36,39,43,46,47,49,49,49,48,47,46,45,44,43,42,41,40,39,38,37,36,35,34,33,32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0]},"latencyHist":{"success":[12.271,7.853,10.713,7.279,7.679,16.228,11.313,26.331,12.896,27.043,23.57,16.468,17.469,24.037,23.776,17.474,18.612,17.32,17.021,18.307,27.335,17.291,16.63,16.464,16.294,20.012,16.13,15.462,15.296,15.133,14.954,14.788,17.297,14.339,14.855,14.214,13.724,13.603,21.121,30.067,29.702,30.601,29.143],"fail":[30.854,31.032,30.73,30.882,30.912,30.746,30.75,30.727,30.742,30.777,30.736,30.735,30.732,30.759,30.746,30.3,30.307]},"inFlightVsLatency":{"x":[25,32,33,36,39,43,46,47,49,49,49,48,47,46,45,44,43,42,41,40,39,38,37,36,35,34,33,32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0],"y":[12.271,7.853,10.713,7.279,7.679,16.228,11.313,26.331,12.896,27.043,23.57,30.854,31.032,16.468,17.469,30.73,24.037,30.882,30.912,30.746,30.75,23.776,17.474,30.727,18.612,30.742,17.32,30.777,17.021,18.307,30.736,27.335,17.291,16.63,30.735,16.464,16.294,20.012,16.13,15.462,30.732,15.296,15.133,30.759,14.954,14.788,17.297,14.339,14.855,14.214,13.724,30.746,13.603,21.121,30.3,30.067,29.702,30.307,30.601,29.143],"success":[true,true,true,true,true,true,true,true,true,true,true,false,false,true,true,false,true,false,false,false,false,true,true,false,true,false,true,false,true,true,false,true,true,true,false,true,true,true,true,true,false,true,true,false,true,true,true,true,true,true,true,false,true,true,false,true,true,false,true,true]},"nodeFailures":{"labels":["0xb15d5A4e...","0x210eeAC0..."],"fullLabels":["0xb15d5A4e2be34f4bE154A1b08a94Ab920FfD8A41","0x210eeAC07542F815ebB6FD6689637D8cA2689392"],"timeouts":[34,34],"otherErrors":[0,0]}};
+const plotlyLayout = {
+  paper_bgcolor: '#000000', plot_bgcolor: '#111111',
+  font: { family: 'SF Mono, Monaco, Inconsolata, monospace', color: '#ffffff', size: 11 },
+  xaxis: { gridcolor: '#222222', zerolinecolor: '#222222' },
+  yaxis: { gridcolor: '#222222', zerolinecolor: '#222222' },
+  margin: { l: 60, r: 30, t: 40, b: 50 }, hovermode: 'closest'
+};
+const plotlyConfig = { responsive: true, displayModeBar: true, modeBarButtonsToRemove: ['lasso2d', 'select2d'], displaylogo: false };
+if (chartData.timeline) {
+  var tl = chartData.timeline;
+  Plotly.newPlot('timelineChart', [
+    { x: tl.success.x, y: tl.success.y, text: tl.success.text, mode: 'markers', type: 'scatter', name: 'Success',
+      marker: { color: '#96FF5E', size: 6, opacity: 0.7 }, hovertemplate: '%{text}<br>%{y:.2f}s<extra>Success</extra>' },
+    { x: tl.fail.x, y: tl.fail.y, text: tl.fail.text, mode: 'markers', type: 'scatter', name: 'Failed',
+      marker: { color: '#ef5350', size: 8, symbol: 'x', opacity: 0.9 }, hovertemplate: '%{text}<br>%{y:.2f}s<extra>Failed</extra>' }
+  ], { ...plotlyLayout, title: 'Request Latency Over Time',
+    xaxis: { ...plotlyLayout.xaxis, title: 'Elapsed Time (s)' },
+    yaxis: { ...plotlyLayout.yaxis, title: 'Latency (s)' } }, plotlyConfig);
+}
+if (chartData.latencyHist) {
+  var h = chartData.latencyHist;
+  Plotly.newPlot('latencyHistChart', [
+    { x: h.success, type: 'histogram', name: 'Success', marker: { color: '#96FF5E' }, opacity: 0.7 },
+    { x: h.fail, type: 'histogram', name: 'Failed', marker: { color: '#ef5350' }, opacity: 0.7 }
+  ], { ...plotlyLayout, title: 'Latency Distribution', barmode: 'overlay',
+    xaxis: { ...plotlyLayout.xaxis, title: 'Latency (s)' },
+    yaxis: { ...plotlyLayout.yaxis, title: 'Count' } }, plotlyConfig);
+}
+if (chartData.timelineInFlight) {
+  var inf = chartData.timelineInFlight;
+  Plotly.newPlot('inFlightChart', [
+    { x: inf.x, y: inf.y, type: 'scatter', mode: 'lines', name: 'In-flight',
+      line: { color: '#ffa726', width: 1.5 }, fill: 'tozeroy', fillcolor: 'rgba(255,167,38,0.15)' }
+  ], { ...plotlyLayout, title: 'Concurrent In-flight Requests',
+    xaxis: { ...plotlyLayout.xaxis, title: 'Elapsed Time (s)' },
+    yaxis: { ...plotlyLayout.yaxis, title: 'In-flight' } }, plotlyConfig);
+}
+if (chartData.inFlightVsLatency) {
+  var iv = chartData.inFlightVsLatency;
+  var ivColors = iv.success.map(function(ok) { return ok ? '#96FF5E' : '#ef5350'; });
+  Plotly.newPlot('inFlightVsLatencyChart', [
+    { x: iv.x, y: iv.y, mode: 'markers', type: 'scatter',
+      marker: { color: ivColors, size: 5, opacity: 0.6 },
+      hovertemplate: 'In-flight: %{x}<br>Latency: %{y:.2f}s<extra></extra>' }
+  ], { ...plotlyLayout, title: 'In-flight vs Latency',
+    xaxis: { ...plotlyLayout.xaxis, title: 'Concurrent In-flight' },
+    yaxis: { ...plotlyLayout.yaxis, title: 'Latency (s)' } }, plotlyConfig);
+}
+if (chartData.steadySweep) {
+  var sw = chartData.steadySweep;
+  Plotly.newPlot('sweepSuccessChart', [
+    { x: sw.map(function(d){return d.label}), y: sw.map(function(d){return d.successPct}),
+      type: 'scatter', mode: 'lines+markers', name: 'Success Rate',
+      line: { color: '#96FF5E', width: 3 },
+      marker: { size: 10, color: sw.map(function(d){ return d.successPct >= 95 ? '#96FF5E' : d.successPct >= 80 ? '#ffa726' : '#ef5350'; }),
+        line: { color: '#000000', width: 2 } },
+      hovertemplate: '%{x}<br>%{y:.1f}%<extra></extra>' }
+  ], { ...plotlyLayout, title: 'Success Rate vs Request Rate',
+    xaxis: { ...plotlyLayout.xaxis, title: 'Request Rate' },
+    yaxis: { ...plotlyLayout.yaxis, title: 'Success Rate (%)', range: [0, 105] } }, plotlyConfig);
+}
+if (chartData.steadySweep) {
+  var sw2 = chartData.steadySweep;
+  Plotly.newPlot('sweepLatencyChart', [
+    { x: sw2.map(function(d){return d.label}), y: sw2.map(function(d){return d.p50}),
+      type: 'scatter', mode: 'lines+markers', name: 'p50', line: { color: '#96FF5E', width: 3 }, marker: { size: 8 } },
+    { x: sw2.map(function(d){return d.label}), y: sw2.map(function(d){return d.p95}),
+      type: 'scatter', mode: 'lines+markers', name: 'p95', line: { color: '#ffa726', width: 2, dash: 'dash' }, marker: { size: 6 } },
+    { x: sw2.map(function(d){return d.label}), y: sw2.map(function(d){return d.p99}),
+      type: 'scatter', mode: 'lines+markers', name: 'p99', line: { color: '#ef5350', width: 1, dash: 'dot' }, marker: { size: 5 } }
+  ], { ...plotlyLayout, title: 'Latency Percentiles vs Request Rate',
+    xaxis: { ...plotlyLayout.xaxis, title: 'Request Rate' },
+    yaxis: { ...plotlyLayout.yaxis, title: 'Latency (s)' } }, plotlyConfig);
+}
+if (chartData.nodeFailures) {
+  var nf = chartData.nodeFailures;
+  Plotly.newPlot('nodeFailureChart', [
+    { x: nf.labels, y: nf.timeouts, type: 'bar', name: 'Timeouts', marker: { color: '#ffa726' },
+      text: nf.fullLabels, hovertemplate: '%{text}<br>Timeouts: %{y}<extra></extra>' },
+    { x: nf.labels, y: nf.otherErrors, type: 'bar', name: 'Other Errors', marker: { color: '#ef5350' },
+      text: nf.fullLabels, hovertemplate: '%{text}<br>Errors: %{y}<extra></extra>' }
+  ], { ...plotlyLayout, title: 'Per-Node Error Attribution', barmode: 'stack',
+    xaxis: { ...plotlyLayout.xaxis, title: 'Node' },
+    yaxis: { ...plotlyLayout.yaxis, title: 'Error Count' } }, plotlyConfig);
+}
+</script>
+
+</body>
+</html>
