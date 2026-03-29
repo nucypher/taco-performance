@@ -59,6 +59,8 @@ export interface CLIOptions {
   payload?: string;
   maxDuration?: number;
   maxConsecutiveFailures?: number;
+  timeout?: number;
+  help?: boolean;
   verbose?: boolean;
   json?: boolean;
   // Network configuration

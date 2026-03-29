@@ -458,16 +458,32 @@ function saveReport(data: TestData, outputPath?: string): string {
   return filepath;
 }
 
+function printReportHelp(): void {
+  console.log("\nTACo performance HTML report generator\n");
+  console.log("Usage:");
+  console.log("  npx tsx src/report.ts <data-file.json>");
+  console.log("  npx tsx src/report.ts --latest");
+  console.log("  npx tsx src/report.ts <data-file.json> --output=report.html");
+  console.log("  npx tsx src/report.ts --help");
+  console.log();
+}
+
 function main() {
   const { values, positionals } = parseArgs({
     args: process.argv.slice(2),
     options: {
       latest: { type: "boolean" },
       output: { type: "string" },
+      help: { type: "boolean", short: "h" },
     },
     strict: false,
     allowPositionals: true,
   });
+
+  if (values.help) {
+    printReportHelp();
+    process.exit(0);
+  }
 
   let dataPath: string | null = null;
   let outputPath = values.output as string | undefined;
@@ -483,10 +499,7 @@ function main() {
   }
 
   if (!dataPath) {
-    console.log("Usage:");
-    console.log("  npx tsx src/report.ts <data-file.json>");
-    console.log("  npx tsx src/report.ts --latest");
-    console.log("  npx tsx src/report.ts <data-file.json> --output=report.html");
+    console.error("Error: pass a data file, --latest, or --help");
     process.exit(1);
   }
 
