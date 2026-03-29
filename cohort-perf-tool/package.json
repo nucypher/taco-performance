@@ -7,7 +7,8 @@
   "author": "NuCypher <dev@nucypher.com>",
   "scripts": {
     "test": "tsx src/runner.ts",
-    "report": "tsx src/report.ts"
+    "report": "tsx src/report.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@metamask/delegation-toolkit": "^0.11.0",

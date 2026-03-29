@@ -51,6 +51,8 @@ npx tsx src/runner.ts --config=configs/daily-cohort1.yml -v
 | `--chain=<id>` | Chain ID | `84532` |
 | `--json` | Print JSON summary to stdout | — |
 | `--verbose`, `-v` | Scrolling log output | — |
+| `--timeout=<s>` | Per-request timeout in seconds (overrides `defaults.timeout` in YAML) | from config or `120` |
+| `--help`, `-h` | Print options and exit | — |
 
 ### Report Generator
 
@@ -63,6 +65,8 @@ npx tsx src/report.ts results/data/2026-02-16-123456.json
 
 # Custom output path
 npx tsx src/report.ts --latest --output=my-report.html
+
+npx tsx src/report.ts --help
 ```
 
 Reports are self-contained HTML files using [Plotly.js](https://plotly.com/javascript/) with interactive charts: zoom, pan, box select, hover tooltips, and PNG export.
@@ -86,6 +90,13 @@ RPC URLs are constructed automatically from API keys. The `--domain` flag determ
 | `INFURA_API_KEY` | Infura API key — constructs RPC URLs for Sepolia, Base Sepolia, Ethereum, and Base |
 | `PIMLICO_API_KEY` | Pimlico API key — constructs bundler/paymaster URLs per chain ID |
 | `DISCORD_WEBHOOK_URL` | Discord webhook for daily reports (CI only) |
+
+## Development
+
+```bash
+npm install
+npm run typecheck   # TypeScript compile check (no emit)
+```
 
 ## CI/CD
 

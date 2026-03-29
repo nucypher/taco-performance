@@ -964,6 +964,8 @@ function parseArgs(args: string[]): CLIOptions {
       regenerate:    { type: "boolean" },
       "max-duration": { type: "string" },
       "max-failures": { type: "string" },
+      timeout:       { type: "string" },
+      help:          { type: "boolean", short: "h" },
       verbose:       { type: "boolean", short: "v" },
       json:          { type: "boolean" },
       domain:        { type: "string" },
@@ -986,6 +988,8 @@ function parseArgs(args: string[]): CLIOptions {
     regenerate: values.regenerate as boolean | undefined,
     maxDuration: values["max-duration"] ? parseInt(values["max-duration"] as string, 10) : undefined,
     maxConsecutiveFailures: values["max-failures"] ? parseInt(values["max-failures"] as string, 10) : undefined,
+    timeout: values.timeout ? parseInt(values.timeout as string, 10) : undefined,
+    help: values.help as boolean | undefined,
     verbose: values.verbose as boolean | undefined,
     json: values.json as boolean | undefined,
     domain: values.domain as string | undefined,
@@ -1040,7 +1044,10 @@ function loadConfig(cliOptions: CLIOptions): {
     burstSizes: d.burstSizes || [50, 100, 200],
     batchesPerBurst: d.batchesPerBurst || 10,
     cooldown: d.cooldown ?? 30,
-    timeout: d.timeout ?? 120,
+    timeout:
+      cliOptions.timeout !== undefined
+        ? cliOptions.timeout
+        : (d.timeout ?? 120),
     maxDuration: cliOptions.maxDuration ?? d.maxDuration,
     maxConsecutiveFailures: cliOptions.maxConsecutiveFailures ?? d.maxConsecutiveFailures,
     output: cliOptions.output,
@@ -1051,8 +1058,36 @@ function loadConfig(cliOptions: CLIOptions): {
 // Main
 // =============================================================================
 
+function printRunnerHelp(): void {
+  console.log("\nTACo performance test runner\n");
+  console.log("Usage:");
+  console.log("  npx tsx src/runner.ts --config=<file.yml> [options]\n");
+  console.log("Options:");
+  console.log("  --config=<file>        YAML config with payloads (required for runs)");
+  console.log("  --mode=<mode>          steady, burst, or sweep (default: from config or steady)");
+  console.log("  --rate=<n>             requests per second");
+  console.log("  --duration=<sec>       duration per rate level");
+  console.log("  --requests=<n>         fixed request count (overrides duration)");
+  console.log("  --timeout=<sec>        per-request timeout (overrides config default.timeout)");
+  console.log("  --max-duration=<sec>   stop steady run after this wall time");
+  console.log("  --max-failures=<n>     stop after n consecutive failures");
+  console.log("  --domain=<domain>      devnet or mainnet");
+  console.log("  --cohort=<id>          cohort id");
+  console.log("  --chain=<id>           chain id");
+  console.log("  --porter-uris=<urls>   comma-separated porter URIs");
+  console.log("  --json                 print JSON summary to stdout (CI)");
+  console.log("  --verbose, -v          scrolling logs");
+  console.log("  --help, -h             show this message");
+  console.log();
+}
+
 async function main() {
   const cliOptions = parseArgs(process.argv.slice(2));
+
+  if (cliOptions.help) {
+    printRunnerHelp();
+    process.exit(0);
+  }
 
   // Handle --from-data: regenerate report from existing data
   if (cliOptions.fromData) {
@@ -1080,21 +1115,7 @@ async function main() {
   }
 
   if (!cliOptions.config) {
-    console.log("\nTACo Performance Test Tool\n");
-    console.log("Usage:");
-    console.log("  npx tsx src/runner.ts --config=<file.yml> [options]\n");
-    console.log("Options:");
-    console.log("  --config=<file>     Config file (required)");
-    console.log("  --mode=<mode>       steady, burst, or sweep (default: steady)");
-    console.log("  --rate=<n>          Requests per second (default: 1)");
-    console.log("  --duration=<sec>    Duration per rate level (default: 60)");
-    console.log("  --requests=<n>      Fixed request count (overrides duration)");
-    console.log("  --domain=<domain>   TACo domain: devnet or mainnet (default: devnet)");
-    console.log("  --cohort=<id>       Cohort ID (default: 3)");
-    console.log("  --chain=<id>        Chain ID (default: 84532)");
-    console.log("  --json              Output JSON summary (for CI)");
-    console.log("  --verbose, -v       Verbose scrolling output");
-    console.log();
+    console.error("Error: --config=<file> is required (use --help for options)");
     process.exit(1);
   }
 
@@ -1102,6 +1123,11 @@ async function main() {
     config, mode, rate, duration, requests, rates, burstSizes,
     batchesPerBurst, cooldown, timeout, maxDuration, maxConsecutiveFailures, output,
   } = loadConfig(cliOptions);
+
+  if (!Number.isFinite(timeout) || timeout < 1) {
+    console.error("Error: timeout must be a positive number (seconds)");
+    process.exit(1);
+  }
 
   // Set global state from CLI/config (CLI overrides config)
   REQUEST_TIMEOUT_SECONDS = timeout;
